@@ -2,8 +2,8 @@
 
 - A theme for pegasus-frontend
 
-![screen](https://github.com/ZagonAb/pegasus-box/blob/166a36ef7ebbf1ef628652bc41d80d39eaea91d3/.meta/screenshots/screen3.png)
+![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/dc4b86b64bb0fac552780b887b97988452e11ecb/.meta/screenshots/screen0.png)
 
-![screen](https://github.com/ZagonAb/pegasus-box/blob/166a36ef7ebbf1ef628652bc41d80d39eaea91d3/.meta/screenshots/screen3.png)
+![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/dc4b86b64bb0fac552780b887b97988452e11ecb/.meta/screenshots/screen1.png)
 
-![screen](https://github.com/ZagonAb/pegasus-box/blob/166a36ef7ebbf1ef628652bc41d80d39eaea91d3/.meta/screenshots/screen3.png)
+![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/dc4b86b64bb0fac552780b887b97988452e11ecb/.meta/screenshots/screen2.png)
