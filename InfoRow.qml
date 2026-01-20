@@ -10,7 +10,7 @@ Item {
 
     Row {
         anchors.fill: parent
-        spacing: vpx(10)
+        spacing: - vpx(30)
 
         Text {
             text: label

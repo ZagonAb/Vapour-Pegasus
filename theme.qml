@@ -31,10 +31,10 @@ FocusScope {
         }
 
         // Restore last game index
-        var savedIndex = api.memory.get('lastGameIndex')
+        /*var savedIndex = api.memory.get('lastGameIndex')
         if (savedIndex !== undefined && savedIndex < api.allGames.count) {
             gameListView.currentIndex = savedIndex
-        }
+        }*/
     }
 
 
@@ -686,7 +686,7 @@ FocusScope {
             }
 
             Keys.onPressed: {
-                if (api.keys.isAccept(event)) {
+                if (!event.isAutoRepeat && api.keys.isAccept(event)) {
                     event.accepted = true
                     Utils.launchGame(currentGame, api)
                 }

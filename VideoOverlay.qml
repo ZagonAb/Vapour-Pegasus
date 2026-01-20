@@ -14,7 +14,7 @@ Item {
     // Señales para comunicar cambios
     signal fullscreenChanged(bool fullscreen)
     signal muteStateChanged(bool muted)
-    signal videoFinished()  // Nueva señal para cuando el video termina
+    signal videoFinished()  // Señal para cuando el video termina
 
     // Video player
     Video {
@@ -77,7 +77,7 @@ Item {
 
     // Función para manejar el fin del video
     function handleVideoEnd() {
-        console.log("Handling video end")
+        console.log("Handling video end - Video finished naturally")
         isPlaying = false
 
         // Si estaba en fullscreen, salir de él
@@ -87,11 +87,11 @@ Item {
             fullscreenChanged(false)
         }
 
-        // Emitir señal de que el video terminó
-        videoFinished()
-
         // Reiniciar el video a la posición inicial para que esté listo para reproducir de nuevo
         videoPlayer.seek(0)
+
+        // Emitir señal de que el video terminó (al final para asegurar que todo esté listo)
+        videoFinished()
     }
 
     // Funciones de control
@@ -131,14 +131,25 @@ Item {
     }
 
     function stop() {
+        console.log("Stop function called")
         videoPlayer.stop()
         isPlaying = false
+
+        // Forzar opacidad a 0 inmediatamente
+        videoPlayer.opacity = 0
+
         // Al detener, también salir de fullscreen
         if (isFullscreen) {
             isFullscreen = false
             videoPlayer.fillMode = VideoOutput.PreserveAspectCrop
             fullscreenChanged(false)
         }
+
+        // Reiniciar posición del video
+        videoPlayer.seek(0)
+
+        // IMPORTANTE: Emitir señal videoFinished al final para que DetailsView reciba la notificación
+        videoFinished()
     }
 
     // Detener el video cuando cambia el juego
