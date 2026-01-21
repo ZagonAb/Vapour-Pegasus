@@ -7,7 +7,6 @@ import "utils.js" as Utils
 FocusScope {
     id: root
 
-    // Current view states
     property string currentView: "home"
     property var currentGame: null
     property var currentCollection: api.allGames
@@ -20,7 +19,7 @@ FocusScope {
     FocusManager {
         id: focusManager
         homeView: homeView
-        detailsView: detailsViewComponent  // Usa detailsViewComponent
+        detailsView: detailsViewComponent
         gameListView: gameListView
         filterListView: unifiedFilterListView
     }
@@ -37,14 +36,10 @@ FocusScope {
         }*/
     }
 
-
-    // Reemplaza la sección del Rectangle background en theme.qml con esto:
-
     Rectangle {
         anchors.fill: parent
         color: "#000000"
 
-        // Background Image - desaparece cuando el video está en fullscreen
         Image {
             id: backgroundImage
             anchors.fill: parent
@@ -62,41 +57,38 @@ FocusScope {
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
             opacity: (currentView === "details" && videoOverlayComponent.isFullscreen) ? 0 : 1
-            visible: opacity > 0  // Hacer invisible completamente cuando opacity es 0
+            visible: opacity > 0
 
             Behavior on opacity {
                 NumberAnimation {
-                    duration: 250  // Reducido de 500 a 250ms para transiciones más rápidas
+                    duration: 250
                     easing.type: Easing.InOutQuad
                 }
             }
 
             onStatusChanged: {
                 if (status === Image.Ready && !(currentView === "details" && videoOverlayComponent.isFullscreen)) {
-                    // Solo hacer visible si no estamos en fullscreen
                 } else if (status === Image.Error) {
                     opacity = 0
                 }
             }
         }
 
-        // Video Overlay (se superpone al background)
         VideoOverlay {
             id: videoOverlayComponent
             currentGame: root.currentGame
             z: 1
         }
 
-        // Gradient overlay - desaparece en fullscreen
         Rectangle {
             anchors.fill: parent
             z: 2
             opacity: (currentView === "details" && videoOverlayComponent.isFullscreen) ? 0 : 1
-            visible: opacity > 0  // Hacer invisible completamente cuando opacity es 0
+            visible: opacity > 0
 
             Behavior on opacity {
                 NumberAnimation {
-                    duration: 250  // Reducido de 300 a 250ms para sincronizar
+                    duration: 250
                     easing.type: Easing.InOutQuad
                 }
             }
@@ -116,7 +108,6 @@ FocusScope {
         focusManager: focusManager
     }
 
-    // Top bar with time
     Rectangle {
         id: topBar
         width: parent.width
@@ -143,13 +134,11 @@ FocusScope {
         }
     }
 
-    // Home View
     Item {
         id: homeView
         anchors.fill: parent
         visible: currentView === "home"
 
-        // Components para homeColumn
         Component {
             id: starImageComponent
             Image {
@@ -183,7 +172,6 @@ FocusScope {
             spacing: vpx(20)
             width: parent.width - vpx(120)
 
-            // Game Logo or Title
             Item {
                 width: vpx(400)
                 height: vpx(150)
@@ -226,7 +214,6 @@ FocusScope {
                 }
             }
 
-            // Game Metadata Row
             Row {
                 spacing: vpx(30)
                 height: vpx(24)
@@ -247,7 +234,6 @@ FocusScope {
                     return "All Games"
                 }
 
-                // Collection/Title Text
                 Text {
                     text: parent.displayTitle
                     font.pixelSize: vpx(18)
@@ -257,7 +243,6 @@ FocusScope {
                     height: parent.height
                 }
 
-                // Release Year
                 Text {
                     text: currentGame && currentGame.releaseYear > 0 ? currentGame.releaseYear : ""
                     font.pixelSize: vpx(18)
@@ -268,7 +253,6 @@ FocusScope {
                     height: parent.height
                 }
 
-                // Rating Stars
                 Row {
                     id: ratingRow
                     spacing: vpx(2)
@@ -305,7 +289,6 @@ FocusScope {
                     }
                 }
 
-                // Player Count Icons
                 Row {
                     id: playersRow
                     spacing: vpx(5)
@@ -372,14 +355,11 @@ FocusScope {
             clip: false
             focus: currentView === "home" && focusManager.currentFocus === "gameList"
 
-            // Configuración para que el highlight se mueva hasta cierto punto y luego se quede fijo
             preferredHighlightBegin: vpx(0)
-            preferredHighlightEnd: width - vpx(120) // Posición aproximada del item 7
+            preferredHighlightEnd: width - vpx(120)
             highlightRangeMode: ListView.ApplyRange
             highlightMoveDuration: 250
             highlightFollowsCurrentItem: true
-
-            // Mejora el rendimiento del desplazamiento
             cacheBuffer: vpx(1000)
             displayMarginBeginning: vpx(500)
             displayMarginEnd: vpx(500)
@@ -392,8 +372,6 @@ FocusScope {
                 if (!showingCollections && currentItem && model) {
                     currentGame = model.get(currentIndex)
                 } else if (showingCollections && currentItem && model) {
-                    // Cuando estamos en modo colecciones, el modelo es currentCollection
-                    // que contiene los juegos de la colección seleccionada
                     if (model.count > 0 && currentIndex >= 0 && currentIndex < model.count) {
                         currentGame = model.get(currentIndex)
                     }
@@ -415,11 +393,9 @@ FocusScope {
                     NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
                 }
 
-                // Detecta cuando el juego es seleccionado
                 onIsSelectedChanged: {
                     if (isSelected && hasFocus) {
                         shouldShowReflection = true
-                        // Inicia el reflejo una sola vez
                         reflectionEffect.reflectionProgress = 0.0
                         reflectionEffect.timerRunning = true
                     } else {
@@ -464,7 +440,7 @@ FocusScope {
                             source: imageSource
                             fillMode: Image.PreserveAspectCrop
                             asynchronous: true
-                            visible: false // Ocultamos la imagen original para usar OpacityMask
+                            visible: false
 
                             onStatusChanged: {
                                 if (status === Image.Error) {
@@ -490,7 +466,6 @@ FocusScope {
                             width: parent.width * 0.8
                             height: parent.height * 0.5
 
-                            // Logo (visible solo si existe)
                             Image {
                                 id: logoOverlay
                                 anchors.centerIn: parent
@@ -503,7 +478,6 @@ FocusScope {
                                 visible: status === Image.Ready
                             }
 
-                            // Texto del nombre (visible solo si no hay logo)
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData.title || modelData.name || ""
@@ -530,17 +504,15 @@ FocusScope {
                             ShaderEffect {
                                 id: reflectionEffect
                                 anchors.fill: parent
-                                visible: false // Lo ocultamos para usar con OpacityMask
+                                visible: false
                                 opacity: shouldShowReflection ? 0.8 : 0
 
-                                // Propiedades para controlar la animación
                                 property real reflectionProgress: 0.0
                                 property color reflectionColor: "#FFFFFF"
-                                property real reflectionWidth: 0.35  // Más ancho (antes 0.15)
-                                property real intensity: 0.5         // Más transparente (antes 1.2)
+                                property real reflectionWidth: 0.35
+                                property real intensity: 0.5
                                 property bool timerRunning: false
 
-                                // Timer que se ejecuta una sola vez
                                 Timer {
                                     id: reflectionTimer
                                     interval: 25
@@ -613,15 +585,11 @@ FocusScope {
                                 id: fadeOutTimer
                                 interval: 200
                                 onTriggered: {
-                                    // Cambia esta línea:
-                                    // parent.parent.parent.shouldShowReflection = false
-                                    // Por esta:
                                     shouldShowReflection = false
                                 }
                             }
                             }
 
-                            // Máscara para esquinas redondeadas
                             OpacityMask {
                                 anchors.fill: reflectionEffect
                                 source: reflectionEffect
@@ -635,7 +603,6 @@ FocusScope {
                     }
                 }
 
-                // Canvas para el borde (manteniendo tu código original)
                 Canvas {
                     id: gradientBorder
                     anchors.fill: parent
@@ -692,9 +659,51 @@ FocusScope {
                 }
                 else if (api.keys.isDetails(event)) {
                     event.accepted = true
+                    detailsViewComponent.show()
+                    focusManager.switchView("details")
+                }
+                else if (api.keys.isNextPage(event)) {
+                    event.accepted = true
+                    if (showingCollections) {
+                        if (unifiedFilterListView.currentIndex < unifiedFilterListView.count - 1) {
+                            unifiedFilterListView.currentIndex++
+                        } else {
+                            unifiedFilterListView.currentIndex = 0
+                        }
+                    }
+                }
+                else if (api.keys.isPrevPage(event)) {
+                    event.accepted = true
+                    if (showingCollections) {
+                        if (unifiedFilterListView.currentIndex > 0) {
+                            unifiedFilterListView.currentIndex--
+                        } else {
+                            unifiedFilterListView.currentIndex = unifiedFilterListView.count - 1
+                        }
+                    }
+                }
+                else if (api.keys.isFilters(event)) {
+                    event.accepted = true
                     if (!showingCollections) {
-                        detailsViewComponent.show()
-                        focusManager.switchView("details")
+                        showingCollections = true
+                        unifiedFilterListView.currentIndex = 0
+                        if (api.collections.count > 0) {
+                            currentCollection = api.collections.get(0).games
+                            if (currentCollection.count > 0) {
+                                currentGame = currentCollection.get(0)
+                            }
+                        }
+                        gameListView.currentIndex = 0
+                        focusManager.enterCollectionsView()
+                    } else {
+                        showingCollections = false
+                        unifiedFilterListView.currentIndex = 0
+                        currentCollection = api.allGames
+                        gameListView.currentIndex = 0
+                        if (currentCollection.count > 0) {
+                            currentGame = currentCollection.get(0)
+                        }
+                        focusManager.exitCollectionsView()
                     }
                 }
                 else if (event.key === Qt.Key_Up) {
@@ -705,10 +714,15 @@ FocusScope {
                     event.accepted = true
                     focusManager.handleDown()
                 }
+
                 else if (api.keys.isCancel(event)) {
-                    event.accepted = true
-                    if (!focusManager.handleBack()) {
-                        // Podríamos cerrar la app aquí
+                    if (showingCollections) {
+                        event.accepted = true
+                        focusManager.setFocus("filterSelector")
+                    } else {
+                        if (focusManager.handleBack()) {
+                            event.accepted = true
+                        }
                     }
                 }
             }
@@ -719,32 +733,123 @@ FocusScope {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: keyHints.top
             anchors.bottomMargin: vpx(5)
-            // Ancho dinámico: más pequeño cuando estamos en colecciones
             width: showingCollections ? root.width * 0.8 : Math.min(parent.width - vpx(120), vpx(800))
             height: vpx(50)
 
             ListView {
                 id: unifiedFilterListView
                 anchors.centerIn: parent
-                // El ListView ocupa todo el ancho del contenedor cuando está en colecciones
                 width: showingCollections ? parent.width : contentWidth
                 height: vpx(50)
                 orientation: ListView.Horizontal
                 spacing: vpx(30)
                 focus: currentView === "home" && focusManager.currentFocus === "filterSelector"
                 visible: currentView === "home"
-
-                clip: showingCollections // Activar clip cuando estamos en colecciones
+                clip: showingCollections
                 interactive: false
-
-                highlightMoveDuration: 200
+                highlightMoveDuration: 250
                 highlightFollowsCurrentItem: true
+                highlightRangeMode: showingCollections ? ListView.ApplyRange : ListView.NoHighlightRange
+                preferredHighlightBegin: showingCollections ? width * 0.2 : 0
+                preferredHighlightEnd: showingCollections ? width * 0.8 : width
 
-                // Propiedad para cambiar dinámicamente el modelo
                 property var currentModel: showingCollections ? api.collections : filterModel
                 property var filterModel: ["All", "Favorites", "Most Played", "Recently Played", "Collections"]
 
                 model: currentModel
+
+                Rectangle {
+                    id: slidingIndicator
+                    height: vpx(40)
+                    radius: vpx(8)
+                    color: "#FFFFFF"
+                    visible: !showingCollections && unifiedFilterListView.focus
+                    z: -1
+
+                    Behavior on x {
+                        NumberAnimation {
+                            duration: 300
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: 300
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 200
+                        }
+                    }
+
+                    function updatePosition() {
+                        if (unifiedFilterListView.currentItem) {
+                            var item = unifiedFilterListView.currentItem
+                            var mappedPos = item.mapToItem(unifiedFilterListView, 0, 0)
+                            slidingIndicator.x = mappedPos.x
+                            slidingIndicator.width = item.width
+                            slidingIndicator.y = (unifiedFilterListView.height - slidingIndicator.height) / 2
+                        }
+                    }
+
+                    Component.onCompleted: updatePosition()
+                }
+
+                Rectangle {
+                    id: bottomLineIndicator
+                    height: vpx(2)
+                    radius: vpx(1)
+                    color: "#376f94"
+                    visible: !showingCollections && !unifiedFilterListView.focus
+                    opacity: 0.7
+                    z: -1
+
+                    Behavior on x {
+                        NumberAnimation {
+                            duration: 300
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: 300
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    function updatePosition() {
+                        if (unifiedFilterListView.currentItem) {
+                            var item = unifiedFilterListView.currentItem
+                            var mappedPos = item.mapToItem(unifiedFilterListView, 0, 0)
+                            bottomLineIndicator.x = mappedPos.x
+                            bottomLineIndicator.width = item.width
+                            bottomLineIndicator.y = unifiedFilterListView.height - vpx(10)
+                        }
+                    }
+
+                    Component.onCompleted: updatePosition()
+                }
+
+                onCurrentItemChanged: {
+                    if (!showingCollections) {
+                        slidingIndicator.updatePosition()
+                        bottomLineIndicator.updatePosition()
+                    }
+                }
+
+                onCurrentModelChanged: {
+                    if (!showingCollections) {
+                        Qt.callLater(function() {
+                            slidingIndicator.updatePosition()
+                            bottomLineIndicator.updatePosition()
+                        })
+                    }
+                }
 
                 delegate: Item {
                     id: unifiedDelegate
@@ -765,7 +870,8 @@ FocusScope {
                             anchors.fill: parent
                             color: "#FFFFFF"
                             radius: vpx(8)
-                            visible: isCurrent && hasFocus
+                            visible: showingCollections && isCurrent && hasFocus
+                            z: -1
 
                             Behavior on opacity {
                                 NumberAnimation { duration: 150 }
@@ -779,8 +885,9 @@ FocusScope {
                             height: vpx(2)
                             color: "#376f94"
                             radius: vpx(1)
-                            visible: isCurrent && !hasFocus
+                            visible: showingCollections && isCurrent && !hasFocus
                             opacity: 0.7
+                            z: -1
 
                             Behavior on opacity {
                                 NumberAnimation { duration: 150 }
@@ -820,6 +927,21 @@ FocusScope {
                         if (currentCollection.count > 0) {
                             currentGame = currentCollection.get(0)
                         }
+                    } else if (!showingCollections) {
+                        if (currentIndex === 4) {
+                            showingCollections = true
+                            unifiedFilterListView.currentIndex = 0
+                            if (api.collections.count > 0) {
+                                currentCollection = api.collections.get(0).games
+                                if (currentCollection.count > 0) {
+                                    currentGame = currentCollection.get(0)
+                                }
+                            }
+                            gameListView.currentIndex = 0
+                            focusManager.enterCollectionsView()
+                        } else {
+                            Utils.updateFilter(currentIndex, root)
+                        }
                     }
                 }
 
@@ -831,17 +953,6 @@ FocusScope {
                         } else {
                             unifiedFilterListView.currentIndex = unifiedFilterListView.count - 1
                         }
-
-                        if (!showingCollections && unifiedFilterListView.currentIndex !== 4) {
-                            Utils.updateFilter(unifiedFilterListView.currentIndex, root)
-                        } else if (showingCollections) {
-                            var collection = api.collections.get(unifiedFilterListView.currentIndex)
-                            currentCollection = collection.games
-                            gameListView.currentIndex = 0
-                            if (currentCollection.count > 0) {
-                                currentGame = currentCollection.get(0)
-                            }
-                        }
                     }
                     else if (event.key === Qt.Key_Right) {
                         event.accepted = true
@@ -850,15 +961,24 @@ FocusScope {
                         } else {
                             unifiedFilterListView.currentIndex = 0
                         }
-
-                        if (!showingCollections && unifiedFilterListView.currentIndex !== 4) {
-                            Utils.updateFilter(unifiedFilterListView.currentIndex, root)
-                        } else if (showingCollections) {
-                            var collection = api.collections.get(unifiedFilterListView.currentIndex)
-                            currentCollection = collection.games
-                            gameListView.currentIndex = 0
-                            if (currentCollection.count > 0) {
-                                currentGame = currentCollection.get(0)
+                    }
+                    else if (api.keys.isNextPage(event)) {
+                        event.accepted = true
+                        if (showingCollections) {
+                            if (unifiedFilterListView.currentIndex < unifiedFilterListView.count - 1) {
+                                unifiedFilterListView.currentIndex++
+                            } else {
+                                unifiedFilterListView.currentIndex = 0 // Volver al inicio
+                            }
+                        }
+                    }
+                    else if (api.keys.isPrevPage(event)) {
+                        event.accepted = true
+                        if (showingCollections) {
+                            if (unifiedFilterListView.currentIndex > 0) {
+                                unifiedFilterListView.currentIndex--
+                            } else {
+                                unifiedFilterListView.currentIndex = unifiedFilterListView.count - 1 // Ir al final
                             }
                         }
                     }
@@ -870,9 +990,9 @@ FocusScope {
                         event.accepted = true
                         focusManager.handleDown()
                     }
-                    else if (api.keys.isAccept(event)) {
+                    else if (api.keys.isFilters(event)) {
                         event.accepted = true
-                        if (!showingCollections && unifiedFilterListView.currentIndex === 4) {
+                        if (!showingCollections) {
                             showingCollections = true
                             unifiedFilterListView.currentIndex = 0
                             if (api.collections.count > 0) {
@@ -883,6 +1003,15 @@ FocusScope {
                             }
                             gameListView.currentIndex = 0
                             focusManager.enterCollectionsView()
+                        } else {
+                            showingCollections = false
+                            unifiedFilterListView.currentIndex = 0
+                            currentCollection = api.allGames
+                            gameListView.currentIndex = 0
+                            if (currentCollection.count > 0) {
+                                currentGame = currentCollection.get(0)
+                            }
+                            focusManager.exitCollectionsView()
                         }
                     }
                     else if (api.keys.isCancel(event)) {
@@ -982,5 +1111,3 @@ FocusScope {
         }
     }
 }
-
-

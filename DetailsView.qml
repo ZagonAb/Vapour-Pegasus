@@ -12,23 +12,22 @@ Item {
     property var themeRoot: null
     property var focusManager: null
     property bool videoFullscreen: false
-    property bool allowEscape: true  // Nueva propiedad para controlar si Escape está permitido
-    property int currentButtonIndex: 0  // Índice del botón actualmente seleccionado (0-4)
-    property int totalButtons: 5  // Total de botones (Play, Pause, Stop, Maximize, Mute)
-    property bool videoHasStarted: false  // Para saber si el video ha iniciado alguna vez
+    property bool allowEscape: true
+    property int currentButtonIndex: 0
+    property int totalButtons: 5
+    property bool videoHasStarted: false
 
     function show() {
         visible = true
-        allowEscape = true  // Resetear al mostrar la vista
-        currentButtonIndex = 0  // Resetear al botón Play (index 0)
-        videoHasStarted = false  // Resetear el estado del video
+        allowEscape = true
+        currentButtonIndex = 0
+        videoHasStarted = false
         if (themeRoot) {
             themeRoot.currentView = "details"
         }
         if (focusManager) {
             focusManager.switchView("details")
         }
-        // Conectar las señales del video overlay
         if (themeRoot && themeRoot.videoOverlay) {
             themeRoot.videoOverlay.fullscreenChanged.connect(handleFullscreenChanged)
             themeRoot.videoOverlay.muteStateChanged.connect(handleMuteChanged)
@@ -39,11 +38,8 @@ Item {
     function hide() {
         visible = false
 
-        // SIEMPRE detener el video al salir, sin importar su estado
         if (themeRoot && themeRoot.videoOverlay) {
-            console.log("Hiding DetailsView - Stopping video completely")
             themeRoot.videoOverlay.stop()
-            // Forzar salida de fullscreen si estaba activo
             if (videoFullscreen) {
                 videoFullscreen = false
                 themeRoot.videoOverlay.isFullscreen = false
@@ -56,7 +52,6 @@ Item {
         if (focusManager) {
             focusManager.switchView("home")
         }
-        // Desconectar las señales
         if (themeRoot && themeRoot.videoOverlay) {
             themeRoot.videoOverlay.fullscreenChanged.disconnect(handleFullscreenChanged)
             themeRoot.videoOverlay.muteStateChanged.disconnect(handleMuteChanged)
@@ -66,50 +61,37 @@ Item {
 
     function handleFullscreenChanged(fullscreen) {
         videoFullscreen = fullscreen
-        // Al entrar/salir de fullscreen, resetear al botón Play (index 0)
         currentButtonIndex = 0
-        console.log("Fullscreen changed to:", fullscreen, "- Reset to Play button (index 0)")
     }
 
     function handleMuteChanged(muted) {
-        console.log("Mute state changed in DetailsView:", muted)
-        // Forzar actualización del botón de mute
         muteButton.isMuted = muted
     }
 
     function handleVideoFinished() {
-        console.log("Video finished - Re-enabling Escape and resetting to Play button")
         allowEscape = true
-        videoHasStarted = false  // Bloquear nuevamente Maximize y Mute
-        currentButtonIndex = 0  // Volver al botón Play
+        videoHasStarted = false
+        currentButtonIndex = 0
     }
 
-    // Conexiones para monitorear el estado del video
     Connections {
         target: themeRoot ? themeRoot.videoOverlay : null
 
         function onIsPlayingChanged() {
             if (themeRoot && themeRoot.videoOverlay) {
-                // Bloquear Escape cuando el video está reproduciéndose
                 allowEscape = !themeRoot.videoOverlay.isPlaying
 
-                // Marcar que el video ha iniciado cuando empieza a reproducirse
                 if (themeRoot.videoOverlay.isPlaying && !videoHasStarted) {
                     videoHasStarted = true
-                    console.log("Video has started for the first time - Unlocking Maximize and Mute buttons")
                 }
-
-                console.log("Video playing state changed. allowEscape:", allowEscape, "videoHasStarted:", videoHasStarted)
             }
         }
     }
 
-    // Contenedor principal
     Item {
         anchors.fill: parent
-        anchors.topMargin: vpx(60) // Compensar por el top bar
+        anchors.topMargin: vpx(60)
 
-        // Columna izquierda - Información principal
         Column {
             id: leftColumn
             anchors.left: parent.left
@@ -119,7 +101,6 @@ Item {
             spacing: vpx(15)
             width: parent.width * 0.5
 
-            // Título del juego
             Text {
                 text: currentGame ? currentGame.title : ""
                 font.pixelSize: vpx(48)
@@ -136,7 +117,6 @@ Item {
                 }
             }
 
-            // Fila de metadatos (Rating • Platform • Players)
             Row {
                 spacing: vpx(20)
                 height: vpx(24)
@@ -147,7 +127,6 @@ Item {
                     NumberAnimation { duration: 300 }
                 }
 
-                // Rating Stars
                 Row {
                     id: ratingRow
                     spacing: vpx(2)
@@ -286,7 +265,6 @@ Item {
                     }
                 }
             }
-
 
             Row {
                 spacing: vpx(15)
@@ -458,7 +436,6 @@ Item {
                         onClicked: {
                             if (themeRoot && themeRoot.videoOverlay) {
                                 themeRoot.videoOverlay.stop()
-                                // La señal videoFinished manejará el resto (allowEscape, videoHasStarted, currentButtonIndex)
                                 console.log("Stop button clicked")
                             }
                         }
@@ -475,7 +452,7 @@ Item {
                     border.width: currentButtonIndex === 3 && !videoFullscreen ? vpx(3) : 0
                     border.color: "#FFFFFF"
 
-                    opacity: videoHasStarted ? 1.0 : 0.3  // Opacidad reducida si no ha iniciado
+                    opacity: videoHasStarted ? 1.0 : 0.3
 
                     property bool isFullscreen: videoFullscreen
 
@@ -531,7 +508,7 @@ Item {
                     border.width: currentButtonIndex === 4 && !videoFullscreen ? vpx(3) : 0
                     border.color: "#FFFFFF"
 
-                    opacity: videoHasStarted ? 1.0 : 0.3  // Opacidad reducida si no ha iniciado
+                    opacity: videoHasStarted ? 1.0 : 0.3
 
                     property bool isMuted: themeRoot ? themeRoot.videoOverlay.isMuted : false
 
@@ -598,11 +575,10 @@ Item {
                 NumberAnimation { duration: 300 }
             }
 
-            // Contenedor de descripción (scroll)
             Item {
                 id: scrollContainer
                 anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter  // Centrar verticalmente
+                anchors.verticalCenter: parent.verticalCenter
                 width: parent.width * 0.5 - vpx(20)
                 height: vpx(250)
                 clip: true
@@ -633,15 +609,13 @@ Item {
                 }
             }
 
-            // Contenedor de información dividida en dos columnas
             Row {
                 id: detailsInfoContainer
                 anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter  // Centrar verticalmente
+                anchors.verticalCenter: parent.verticalCenter
                 spacing: vpx(50)
                 width: parent.width * 0.45
 
-                // Columna izquierda de información
                 Column {
                     id: detailsInfoLeft
                     spacing: vpx(18)
@@ -671,7 +645,6 @@ Item {
                     }
                 }
 
-                // Columna derecha de información
                 Column {
                     id: detailsInfoRight
                     spacing: vpx(18)
@@ -874,8 +847,6 @@ Item {
                 onClicked: {
                     if (themeRoot && themeRoot.videoOverlay) {
                         themeRoot.videoOverlay.stop()
-                        // La señal videoFinished manejará el resto (allowEscape, videoHasStarted, currentButtonIndex)
-                        console.log("Floating stop button clicked")
                     }
                 }
             }
@@ -890,7 +861,7 @@ Item {
             border.width: currentButtonIndex === 3 && videoFullscreen ? vpx(3) : 0
             border.color: "#FFFFFF"
 
-            opacity: videoHasStarted ? 1.0 : 0.3  // Opacidad reducida si no ha iniciado
+            opacity: videoHasStarted ? 1.0 : 0.3
 
             property bool isFullscreen: videoFullscreen
 
@@ -945,7 +916,7 @@ Item {
             border.width: currentButtonIndex === 4 && videoFullscreen ? vpx(3) : 0
             border.color: "#FFFFFF"
 
-            opacity: videoHasStarted ? 1.0 : 0.3  // Opacidad reducida si no ha iniciado
+            opacity: videoHasStarted ? 1.0 : 0.3
 
             property bool isMuted: themeRoot ? themeRoot.videoOverlay.isMuted : false
 
@@ -996,50 +967,43 @@ Item {
 
     Keys.onPressed: {
         if (api.keys.isCancel(event) || event.key === Qt.Key_Escape) {
-            // Solo permitir Escape si está habilitado
             if (allowEscape) {
                 event.accepted = true
                 hide()
             } else {
                 event.accepted = true
-                console.log("Escape blocked - Video is playing")
             }
         }
         else if (api.keys.isAccept(event)) {
             event.accepted = true
 
-            // Ejecutar la acción del botón actualmente seleccionado
             switch(currentButtonIndex) {
-                case 0: // Play button
+                case 0:
                     if (currentGame) {
                         Utils.launchGame(currentGame, api)
                     }
                     break
-                case 1: // Pause button
+                case 1:
                     if (themeRoot && themeRoot.videoOverlay) {
                         themeRoot.videoOverlay.togglePlayPause()
                     }
                     break
-                case 2: // Stop button
+                case 2:
                     if (themeRoot && themeRoot.videoOverlay) {
                         themeRoot.videoOverlay.stop()
-                        // La señal videoFinished manejará el resto (allowEscape, videoHasStarted, currentButtonIndex)
-                        console.log("Stop button activated via keyboard")
                     }
                     break
-                case 3: // Maximize button
+                case 3:
                     if (videoHasStarted && themeRoot && themeRoot.videoOverlay) {
                         themeRoot.videoOverlay.toggleFullscreen()
                     } else {
-                        console.log("Maximize blocked - Video hasn't started yet")
                     }
                     break
-                case 4: // Mute button
+                case 4:
                     if (videoHasStarted && themeRoot && themeRoot.videoOverlay) {
                         themeRoot.videoOverlay.toggleMute()
                         muteButton.isMuted = themeRoot.videoOverlay.isMuted
                     } else {
-                        console.log("Mute blocked - Video hasn't started yet")
                     }
                     break
             }
@@ -1048,41 +1012,35 @@ Item {
             event.accepted = true
             var nextIndex = currentButtonIndex - 1
 
-            // Si el video no ha iniciado, saltar botones bloqueados (3 y 4)
             if (!videoHasStarted) {
                 if (nextIndex < 0) {
-                    nextIndex = 2 // Ir al Stop (último botón accesible)
+                    nextIndex = 2
                 } else if (nextIndex === 4 || nextIndex === 3) {
-                    nextIndex = 2 // Saltar a Stop
+                    nextIndex = 2
                 }
             } else {
-                // Navegación normal circular
                 if (nextIndex < 0) {
                     nextIndex = totalButtons - 1
                 }
             }
 
             currentButtonIndex = nextIndex
-            console.log("Navigated to button index:", currentButtonIndex)
         }
         else if (event.key === Qt.Key_Right) {
             event.accepted = true
             var nextIndex = currentButtonIndex + 1
 
-            // Si el video no ha iniciado, saltar botones bloqueados (3 y 4)
             if (!videoHasStarted) {
                 if (nextIndex > 2) {
-                    nextIndex = 0 // Volver al Play
+                    nextIndex = 0
                 }
             } else {
-                // Navegación normal circular
                 if (nextIndex >= totalButtons) {
                     nextIndex = 0
                 }
             }
 
             currentButtonIndex = nextIndex
-            console.log("Navigated to button index:", currentButtonIndex)
         }
     }
 }
