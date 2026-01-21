@@ -232,8 +232,9 @@ FocusScope {
                 }
 
                 Text {
+                    id: gameTitle
                     anchors.centerIn: parent
-                    text: parent.game ? (parent.game.title || parent.game.name || "") : ""
+                    text: parent.game ? (parent.game.title || "") : ""
                     font.pixelSize: vpx(36)
                     font.family: global.fonts.sans
                     font.bold: true
@@ -258,7 +259,7 @@ FocusScope {
                             gameListView.currentIndex >= 0 &&
                             gameListView.currentIndex < currentCollection.count) {
                             var game = currentCollection.get(gameListView.currentIndex)
-                            return game ? (game.title || game.name || "Unknown") : "No games"
+                            return game ? (Utils.cleanGameTitle(game.title) || "Unknown") : "No games"
                             }
                             return "No games"
                     }
@@ -282,7 +283,7 @@ FocusScope {
                     font.pixelSize: vpx(18)
                     font.family: global.fonts.sans
                     color: "white"
-                    visible: currentGame && currentGame.releaseYear > 0 && !showingCollections
+                    visible: currentGame && currentGame.releaseYear > 0
                     verticalAlignment: Text.AlignVCenter
                     height: parent.height
                 }
@@ -290,7 +291,7 @@ FocusScope {
                 Row {
                     id: ratingRow
                     spacing: vpx(2)
-                    visible: currentGame && !showingCollections && currentGame.rating > 0
+                    visible: currentGame && currentGame.rating > 0
                     height: parent.height
 
                     readonly property real ratingValue: currentGame ? currentGame.rating : 0
@@ -326,7 +327,7 @@ FocusScope {
                 Row {
                     id: playersRow
                     spacing: vpx(5)
-                    visible: currentGame && currentGame.players > 1 && !showingCollections
+                    visible: currentGame && currentGame.players > 1
                     height: parent.height
 
                     readonly property int count: currentGame ? currentGame.players : 1
@@ -514,7 +515,7 @@ FocusScope {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: modelData.title || modelData.name || ""
+                                text: modelData.title || ""
                                 font.pixelSize: vpx(20)
                                 font.family: global.fonts.sans
                                 font.bold: true
