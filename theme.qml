@@ -111,25 +111,60 @@ FocusScope {
     Rectangle {
         id: topBar
         width: parent.width
-        height: vpx(60)
-        color: "#80000000"
+        height: vpx(50)
+        color: "transparent"
         anchors.top: parent.top
 
-        Text {
-            id: timeText
+        Row {
+            id: contentRow
             anchors.right: parent.right
             anchors.rightMargin: vpx(30)
             anchors.verticalCenter: parent.verticalCenter
-            font.pixelSize: vpx(24)
-            font.family: global.fonts.sans
-            color: "#FFFFFF"
-            text: Qt.formatTime(new Date(), "hh:mm")
+            spacing: vpx(15)
 
-            Timer {
-                interval: 1000
-                running: true
-                repeat: true
-                onTriggered: timeText.text = Qt.formatTime(new Date(), "hh:mm")
+            Image {
+                id: pegasusLogo
+                source: "assets/icons/pegasus.png"
+                width: vpx(32)
+                height: vpx(32)
+                fillMode: Image.PreserveAspectFit
+                anchors.verticalCenter: parent.verticalCenter
+                asynchronous: true
+                mipmap: true
+                layer.enabled: true
+                layer.effect: DropShadow {
+                    horizontalOffset: 0
+                    verticalOffset: 0
+                    radius: vpx(12)
+                    samples: 25
+                    color: "#80000000"
+                    spread: 0.3
+                }
+            }
+
+            Text {
+                id: timeText
+                anchors.verticalCenter: parent.verticalCenter
+                font.pixelSize: vpx(18)
+                font.family: global.fonts.sans
+                color: "#FFFFFF"
+                text: Qt.formatTime(new Date(), "hh:mm")
+                layer.enabled: true
+                layer.effect: DropShadow {
+                    horizontalOffset: 0
+                    verticalOffset: 0
+                    radius: vpx(12)
+                    samples: 25
+                    color: "#80000000"
+                    spread: 0.3
+                }
+
+                Timer {
+                    interval: 1000
+                    running: true
+                    repeat: true
+                    onTriggered: timeText.text = Qt.formatTime(new Date(), "hh:mm")
+                }
             }
         }
     }
