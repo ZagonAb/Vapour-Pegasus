@@ -1105,7 +1105,7 @@ FocusScope {
                     anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
-                    text: showingCollections ? "Select Collection" : "Details"
+                    text: showingCollections ? "Details" : "Details"
                     font.pixelSize: vpx(16)
                     font.family: global.fonts.sans
                     color: "#CCCCCC"
