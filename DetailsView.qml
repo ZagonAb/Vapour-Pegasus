@@ -127,6 +127,24 @@ Item {
                     NumberAnimation { duration: 300 }
                 }
 
+                Text {
+                    text: currentGame && Utils.getCollectionName(currentGame) ?
+                    Utils.getCollectionName(currentGame) : ""
+                    font.pixelSize: vpx(16)
+                    font.family: global.fonts.sans
+                    color: "#AAAAAA"
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Rectangle {
+                    width: vpx(6)
+                    height: vpx(6)
+                    radius: width / 2
+                    color: "#939393"
+                    visible: currentGame && (ratingRow.visible || playersRow.visible)
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
                 Row {
                     id: ratingRow
                     spacing: vpx(2)
@@ -182,25 +200,7 @@ Item {
                     width: vpx(6)
                     height: vpx(6)
                     radius: width / 2
-                    color: "#666666"
-                    visible: currentGame && (ratingRow.visible || playersRow.visible)
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                Text {
-                    text: currentGame && Utils.getCollectionName(currentGame) ?
-                    Utils.getCollectionName(currentGame) : ""
-                    font.pixelSize: vpx(16)
-                    font.family: global.fonts.sans
-                    color: "#AAAAAA"
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                Rectangle {
-                    width: vpx(6)
-                    height: vpx(6)
-                    radius: width / 2
-                    color: "#666666"
+                    color: "#939393"
                     visible: currentGame && (ratingRow.visible || playersRow.visible)
                     anchors.verticalCenter: parent.verticalCenter
                 }

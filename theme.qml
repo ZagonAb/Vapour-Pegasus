@@ -644,7 +644,7 @@ FocusScope {
                     opacity: (isSelected && hasFocus) ? 1 : 0
 
                     property real progress: 0.0
-                    property real speed: 0.0053
+                    property real speed: 0.0040
                     property bool running: false
 
                     Behavior on opacity {

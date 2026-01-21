@@ -17,7 +17,12 @@ Item {
 
     Video {
         id: videoPlayer
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.top: parent.top
+        anchors.topMargin: isFullscreen ? 0 : vpx(-300)
+
         fillMode: VideoOutput.PreserveAspectCrop
         autoPlay: false
         loops: MediaPlayer.Once
@@ -34,6 +39,10 @@ Item {
 
         Behavior on opacity {
             NumberAnimation { duration: 500; easing.type: Easing.InOutQuad }
+        }
+
+        Behavior on anchors.topMargin {
+            NumberAnimation { duration: 300; easing.type: Easing.InOutQuad }
         }
 
         onStatusChanged: {
