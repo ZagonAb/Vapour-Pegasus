@@ -54,7 +54,6 @@ Item {
             } else if (playbackState === MediaPlayer.StoppedState) {
                 isPlaying = false
                 opacity = 0
-                // Verificar si terminó naturalmente
                 if (videoPlayer.position >= videoPlayer.duration - 100) {
                     handleVideoEnd()
                 }

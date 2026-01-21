@@ -29,7 +29,6 @@ FocusScope {
             currentGame = api.allGames.get(0)
         }
 
-        // Restore last game index
         /*var savedIndex = api.memory.get('lastGameIndex')
         if (savedIndex !== undefined && savedIndex < api.allGames.count) {
             gameListView.currentIndex = savedIndex
@@ -644,8 +643,35 @@ FocusScope {
                     anchors.margins: -vpx(8)
                     opacity: (isSelected && hasFocus) ? 1 : 0
 
+                    property real progress: 0.0
+                    property real speed: 0.0053
+                    property bool running: false
+
                     Behavior on opacity {
                         NumberAnimation { duration: 200 }
+                    }
+
+                    Timer {
+                        id: sweepTimer
+                        interval: 16
+                        repeat: true
+                        running: gradientBorder.running
+                        onTriggered: {
+                            gradientBorder.progress += gradientBorder.speed
+                            if (gradientBorder.progress >= 1.0) {
+                                gradientBorder.progress = 1.0
+                                gradientBorder.running = false
+                            }
+                            gradientBorder.requestPaint()
+                        }
+                    }
+
+                    onOpacityChanged: {
+                        if (opacity === 1) {
+                            progress = 0.0
+                            running = true
+                            requestPaint()
+                        }
                     }
 
                     onPaint: {
@@ -653,21 +679,94 @@ FocusScope {
                         var w = width
                         var h = height
                         var r = vpx(12)
-                        var borderWidth = vpx(4)
+                        var borderWidth = vpx(3)
+                        var offset = borderWidth / 2
 
                         ctx.clearRect(0, 0, w, h)
 
-                        var gradient = ctx.createLinearGradient(0, h, w, 0)
-                        gradient.addColorStop(0, "#FFFFFF")
-                        gradient.addColorStop(0.2, "#376f94")
-                        gradient.addColorStop(1, "#376f94")
+                        var straightW = w - 2 * r - borderWidth
+                        var straightH = h - 2 * r - borderWidth
+                        var corner = Math.PI * r / 2
 
-                        ctx.strokeStyle = gradient
+                        var perimeter =
+                        2 * straightW +
+                        2 * straightH +
+                        4 * corner
+
+                        var startOffset =
+                        straightW +
+                        corner +
+                        straightH +
+                        corner +
+                        straightW
+
+
+                        var dist = (progress * perimeter + startOffset) % perimeter
+
+                        function pointOnBorder(d) {
+                            if (d < straightW)
+                                return { x: r + offset + d, y: offset }
+
+                                d -= straightW
+                                if (d < corner) {
+                                    var a = d / corner * Math.PI / 2
+                                    return {
+                                        x: w - r - offset + Math.sin(a) * r,
+                                        y: r + offset - Math.cos(a) * r
+                                    }
+                                }
+
+                                d -= corner
+                                if (d < straightH)
+                                    return { x: w - offset, y: r + offset + d }
+
+                                    d -= straightH
+                                    if (d < corner) {
+                                        var a = d / corner * Math.PI / 2
+                                        return {
+                                            x: w - r - offset + Math.cos(a) * r,
+                                            y: h - r - offset + Math.sin(a) * r
+                                        }
+                                    }
+
+                                    d -= corner
+                                    if (d < straightW)
+                                        return { x: w - r - offset - d, y: h - offset }
+
+                                        d -= straightW
+                                        if (d < corner) {
+                                            var a = d / corner * Math.PI / 2
+                                            return {
+                                                x: r + offset - Math.sin(a) * r,
+                                                y: h - r - offset + Math.cos(a) * r
+                                            }
+                                        }
+
+                                        d -= corner
+                                        if (d < straightH)
+                                            return { x: offset, y: h - r - offset - d }
+
+                                            d -= straightH
+                                            var a = d / corner * Math.PI / 2
+                                            return {
+                                                x: r + offset - Math.cos(a) * r,
+                                                y: r + offset - Math.sin(a) * r
+                                            }
+                        }
+
+                        var p = pointOnBorder(dist)
+                        var glow = ctx.createRadialGradient(
+                            p.x, p.y, 0,
+                            p.x, p.y, vpx(60)
+                        )
+                        glow.addColorStop(0.0, "#bae5f5")
+                        glow.addColorStop(0.25, "#bae5f5")
+                        glow.addColorStop(1.0, "#397499")
+
+                        ctx.strokeStyle = glow
                         ctx.lineWidth = borderWidth
                         ctx.lineCap = "round"
                         ctx.lineJoin = "round"
-
-                        var offset = borderWidth / 2
 
                         ctx.beginPath()
                         ctx.moveTo(r + offset, offset)
@@ -682,8 +781,6 @@ FocusScope {
                         ctx.closePath()
                         ctx.stroke()
                     }
-
-                    onOpacityChanged: requestPaint()
                 }
             }
 
@@ -1003,7 +1100,7 @@ FocusScope {
                             if (unifiedFilterListView.currentIndex < unifiedFilterListView.count - 1) {
                                 unifiedFilterListView.currentIndex++
                             } else {
-                                unifiedFilterListView.currentIndex = 0 // Volver al inicio
+                                unifiedFilterListView.currentIndex = 0
                             }
                         }
                     }
@@ -1013,7 +1110,7 @@ FocusScope {
                             if (unifiedFilterListView.currentIndex > 0) {
                                 unifiedFilterListView.currentIndex--
                             } else {
-                                unifiedFilterListView.currentIndex = unifiedFilterListView.count - 1 // Ir al final
+                                unifiedFilterListView.currentIndex = unifiedFilterListView.count - 1
                             }
                         }
                     }

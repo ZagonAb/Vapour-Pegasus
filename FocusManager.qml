@@ -12,7 +12,6 @@ QtObject {
 
     function setFocus(elementName) {
         currentFocus = elementName
-        console.log("Setting focus to:", elementName)
 
         switch(elementName) {
             case "gameList":

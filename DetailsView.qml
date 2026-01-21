@@ -436,7 +436,6 @@ Item {
                         onClicked: {
                             if (themeRoot && themeRoot.videoOverlay) {
                                 themeRoot.videoOverlay.stop()
-                                console.log("Stop button clicked")
                             }
                         }
                     }
@@ -547,10 +546,8 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            console.log("Mute button clicked")
                             if (themeRoot && themeRoot.videoOverlay) {
                                 themeRoot.videoOverlay.toggleMute()
-                                // Forzar actualización inmediata
                                 muteButton.isMuted = themeRoot.videoOverlay.isMuted
                             }
                         }
@@ -955,7 +952,6 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    console.log("Floating mute button clicked")
                     if (themeRoot && themeRoot.videoOverlay) {
                         themeRoot.videoOverlay.toggleMute()
                         parent.isMuted = themeRoot.videoOverlay.isMuted
