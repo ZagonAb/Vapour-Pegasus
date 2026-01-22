@@ -15,6 +15,8 @@ FocusScope {
     property int selectedCollectionIndex: 0
     property var detailsView: detailsViewComponent
     property var videoOverlay: videoOverlayComponent
+    property string currentLetter: ""
+    property var letterIndex: []
 
     FocusManager {
         id: focusManager
@@ -33,6 +35,64 @@ FocusScope {
         if (savedIndex !== undefined && savedIndex < api.allGames.count) {
             gameListView.currentIndex = savedIndex
         }*/
+    }
+
+    function buildLetterIndex() {
+        letterIndex = []
+        if (!currentCollection) return
+
+            var letters = {}
+            for (var i = 0; i < currentCollection.count; i++) {
+                var game = currentCollection.get(i)
+                var title = game.sortBy || game.title || ""
+                var firstChar = title.charAt(0).toUpperCase()
+
+                if (!letters[firstChar]) {
+                    letters[firstChar] = i
+                }
+            }
+
+            var sortedLetters = Object.keys(letters).sort()
+            for (var j = 0; j < sortedLetters.length; j++) {
+                letterIndex.push({
+                    letter: sortedLetters[j],
+                    index: letters[sortedLetters[j]]
+                })
+            }
+    }
+
+    function jumpToNextLetter() {
+        if (letterIndex.length === 0) return
+
+            var currentIndex = gameListView.currentIndex
+            for (var i = 0; i < letterIndex.length; i++) {
+                if (letterIndex[i].index > currentIndex) {
+                    gameListView.currentIndex = letterIndex[i].index
+                    currentLetter = letterIndex[i].letter
+                    letterTimer.restart()
+                    return
+                }
+            }
+            gameListView.currentIndex = letterIndex[0].index
+            currentLetter = letterIndex[0].letter
+            letterTimer.restart()
+    }
+
+    function jumpToPrevLetter() {
+        if (letterIndex.length === 0) return
+
+            var currentIndex = gameListView.currentIndex
+            for (var i = letterIndex.length - 1; i >= 0; i--) {
+                if (letterIndex[i].index < currentIndex) {
+                    gameListView.currentIndex = letterIndex[i].index
+                    currentLetter = letterIndex[i].letter
+                    letterTimer.restart()
+                    return
+                }
+            }
+            gameListView.currentIndex = letterIndex[letterIndex.length - 1].index
+            currentLetter = letterIndex[letterIndex.length - 1].letter
+            letterTimer.restart()
     }
 
     Rectangle {
@@ -411,6 +471,7 @@ FocusScope {
                         currentGame = model.get(currentIndex)
                     }
                 }
+                buildLetterIndex()
             }
 
             delegate: Item {
@@ -797,23 +858,11 @@ FocusScope {
                 }
                 else if (api.keys.isNextPage(event)) {
                     event.accepted = true
-                    if (showingCollections) {
-                        if (unifiedFilterListView.currentIndex < unifiedFilterListView.count - 1) {
-                            unifiedFilterListView.currentIndex++
-                        } else {
-                            unifiedFilterListView.currentIndex = 0
-                        }
-                    }
+                    jumpToNextLetter()
                 }
                 else if (api.keys.isPrevPage(event)) {
                     event.accepted = true
-                    if (showingCollections) {
-                        if (unifiedFilterListView.currentIndex > 0) {
-                            unifiedFilterListView.currentIndex--
-                        } else {
-                            unifiedFilterListView.currentIndex = unifiedFilterListView.count - 1
-                        }
-                    }
+                    jumpToPrevLetter()
                 }
                 else if (api.keys.isFilters(event)) {
                     event.accepted = true
@@ -847,7 +896,6 @@ FocusScope {
                     event.accepted = true
                     focusManager.handleDown()
                 }
-
                 else if (api.keys.isCancel(event)) {
                     if (showingCollections) {
                         event.accepted = true
@@ -865,7 +913,7 @@ FocusScope {
             id: filterContainer
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: keyHints.top
-            anchors.bottomMargin: vpx(5)
+            anchors.bottomMargin: vpx(10)
             width: showingCollections ? root.width * 0.8 : Math.min(parent.width - vpx(120), vpx(800))
             height: vpx(50)
 
@@ -1175,7 +1223,7 @@ FocusScope {
             id: keyHints
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: vpx(10)
+            anchors.bottomMargin: vpx(12)
             spacing: vpx(50)
 
             Row {
@@ -1187,7 +1235,7 @@ FocusScope {
                     anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
-                    text: "Play"
+                    text: "launch game"
                     font.pixelSize: vpx(16)
                     font.family: global.fonts.sans
                     color: "#CCCCCC"
@@ -1207,6 +1255,56 @@ FocusScope {
                     font.pixelSize: vpx(16)
                     font.family: global.fonts.sans
                     color: "#CCCCCC"
+                }
+            }
+
+            Row {
+                spacing: vpx(10)
+
+                Rectangle {
+                    width: vpx(21)
+                    height: vpx(21)
+                    radius: vpx(20)
+                    color: "transparent"
+                    border.color: "#FFFFFF"
+                    border.width: vpx(1)
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        text: "LB"
+                        font.pixelSize: vpx(12)
+                        font.family: global.fonts.sans
+                        font.bold: true
+                        color: "#FFFFFF"
+                        anchors.centerIn: parent
+                    }
+                }
+
+                Text {
+                    text: "Filter by letter"
+                    font.pixelSize: vpx(16)
+                    font.family: global.fonts.sans
+                    color: "#CCCCCC"
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Rectangle {
+                    width: vpx(21)
+                    height: vpx(21)
+                    radius: vpx(20)
+                    color: "transparent"
+                    border.color: "#FFFFFF"
+                    border.width: vpx(1)
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        text: "RB"
+                        font.pixelSize: vpx(12)
+                        font.family: global.fonts.sans
+                        font.bold: true
+                        color: "#FFFFFF"
+                        anchors.centerIn: parent
+                    }
                 }
             }
 
@@ -1241,6 +1339,128 @@ FocusScope {
                     color: "#CCCCCC"
                 }
             }
+        }
+    }
+
+    Item {
+        id: letterOverlay
+        anchors.fill: parent
+        visible: opacity > 0
+        opacity: currentLetter !== "" ? 1 : 0
+        z: 1000
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 150
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        FastBlur {
+            id: blurEffect
+            anchors.fill: parent
+            source: root
+            radius: letterOverlay.opacity > 0 ? 64 : 0
+            cached: false
+
+            Behavior on radius {
+                NumberAnimation {
+                    duration: 150
+                    easing.type: Easing.OutCubic
+                }
+            }
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: "#CC000000"
+            opacity: parent.opacity
+        }
+
+        Item {
+            anchors.centerIn: parent
+            width: vpx(200)
+            height: vpx(200)
+            scale: letterOverlay.opacity * 0.9 + 0.1
+
+            Behavior on scale {
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.OutBack
+                    easing.overshoot: 1.1
+                }
+            }
+
+            Rectangle {
+                id: letterBox
+                anchors.centerIn: parent
+                width: vpx(150)
+                height: vpx(150)
+                radius: vpx(20)
+                color: "#1A1A1A"
+                border.color: "#4A9FD8"
+                border.width: vpx(3)
+
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: vpx(3)
+                    radius: parent.radius - vpx(3)
+                    color: "transparent"
+                    border.color: "#2A5A7A"
+                    border.width: vpx(1)
+                    opacity: 0.5
+                }
+
+                layer.enabled: true
+                layer.effect: Glow {
+                    samples: 17
+                    color: "#4A9FD8"
+                    spread: 0.2
+                    radius: vpx(8)
+                }
+            }
+
+            Text {
+                id: mainLetter
+                anchors.centerIn: parent
+                text: currentLetter
+                font.pixelSize: vpx(80)
+                font.family: global.fonts.sans
+                font.bold: true
+                color: "#FFFFFF"
+
+                layer.enabled: true
+                layer.effect: DropShadow {
+                    horizontalOffset: 0
+                    verticalOffset: vpx(2)
+                    radius: vpx(8)
+                    samples: 17
+                    color: "#CC000000"
+                }
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: letterBox.bottom
+                anchors.topMargin: vpx(15)
+                text: "L1 / R1"
+                font.pixelSize: vpx(14)
+                font.family: global.fonts.sans
+                color: "#AAAAAA"
+                opacity: parent.opacity
+            }
+        }
+        Timer {
+            id: letterTimer
+            interval: 1000
+            running: currentLetter !== ""
+            onTriggered: currentLetter = ""
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            enabled: parent.visible
+            onClicked: {}
         }
     }
 }
