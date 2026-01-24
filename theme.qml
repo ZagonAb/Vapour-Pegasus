@@ -19,6 +19,22 @@ FocusScope {
     property var letterIndex: []
     property var gameListView: gameListView
 
+    property var favoritesFilter: favoritesFilterModel
+    property var mostPlayedFilter: mostPlayedFilterModel
+    property var recentlyPlayedFilter: recentlyPlayedFilterModel
+
+    FavoritesFilter {
+        id: favoritesFilterModel
+    }
+
+    MostPlayedFilter {
+        id: mostPlayedFilterModel
+    }
+
+    RecentlyPlayedFilter {
+        id: recentlyPlayedFilterModel
+    }
+
     FocusManager {
         id: focusManager
         homeView: homeView
@@ -32,9 +48,9 @@ FocusScope {
             currentGame = api.allGames.get(0)
         }
 
-        //Utils.debugFilterCounts(api);
+        /*Utils.debugFilterCounts(api);
 
-        /*var savedIndex = api.memory.get('lastGameIndex')
+        var savedIndex = api.memory.get('lastGameIndex')
         if (savedIndex !== undefined && savedIndex < api.allGames.count) {
             gameListView.currentIndex = savedIndex
         }*/
@@ -942,7 +958,7 @@ FocusScope {
                 id: unifiedFilterListView
                 objectName: "unifiedFilterListView"
                 anchors.centerIn: parent
-                width: showingCollections ? parent.width : Math.max(contentWidth, vpx(100))
+                width: showingCollections ? parent.width : vpx(800)
                 height: vpx(50)
                 orientation: ListView.Horizontal
                 spacing: vpx(30)
@@ -1062,9 +1078,9 @@ FocusScope {
                     property bool isCurrent: unifiedFilterListView.currentIndex === index
                     property string itemName: {
                         if (showingCollections) {
-                            return modelData && modelData.name ? modelData.name : ""
+                            return (typeof modelData === 'object' && modelData && modelData.name) ? modelData.name : ""
                         } else {
-                            return modelData ? modelData : ""
+                            return (typeof modelData === 'string') ? modelData : ""
                         }
                     }
                     property bool hasFocus: unifiedFilterListView.focus
@@ -1145,6 +1161,33 @@ FocusScope {
                     }
                 }
 
+                /*onCurrentIndexChanged: {
+                    if (showingCollections && currentItem) {
+                        selectedCollectionIndex = currentIndex
+                        var collection = api.collections.get(currentIndex)
+                        currentCollection = collection.games
+                        gameListView.currentIndex = 0
+                        if (currentCollection.count > 0) {
+                            currentGame = currentCollection.get(0)
+                        }
+                    } else if (!showingCollections) {
+                        if (currentIndex === 4) {
+                            showingCollections = true
+                            unifiedFilterListView.currentIndex = 0
+                            if (api.collections.count > 0) {
+                                currentCollection = api.collections.get(0).games
+                                if (currentCollection.count > 0) {
+                                    currentGame = currentCollection.get(0)
+                                }
+                            }
+                            gameListView.currentIndex = 0
+                            focusManager.enterCollectionsView()
+                        } else {
+                            Utils.updateFilter(currentIndex, root)
+                        }
+                    }
+                }*/
+
                 onCurrentIndexChanged: {
                     if (showingCollections && currentItem) {
                         selectedCollectionIndex = currentIndex
@@ -1168,6 +1211,10 @@ FocusScope {
                             focusManager.enterCollectionsView()
                         } else {
                             Utils.updateFilter(currentIndex, root)
+                            var filterNames = ["All", "Favorites", "Most Played", "Recently Played"];
+                            if (currentIndex < filterNames.length) {
+                                /*Utils.debugCollection(currentCollection, filterNames[currentIndex]);*/
+                            }
                         }
                     }
                 }

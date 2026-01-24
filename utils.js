@@ -78,13 +78,26 @@ function getCollectionName(game) {
     if (!game || !game.collections || game.collections.count === 0) {
         return "Unknown";
     }
-    return game.collections.get(0).name;
+    var collection = game.collections.get(0);
+    if (collection && collection.name) {
+        return collection.name;
+    }
+    return "Unknown";
 }
 
 function launchGame(game, api) {
-    if (!game) return;
-    api.memory.set('lastGameIndex', api.allGames.toVarArray().indexOf(game));
-    game.launch();
+    if (!game) {
+        return;
+    }
+    var originalGame = findOriginalGame(game, api);
+
+    if (!originalGame) {
+        return;
+    }
+
+    /*api.memory.set('lastGameIndex', api.allGames.toVarArray().indexOf(originalGame));*/
+
+    originalGame.launch();
 }
 
 function updateFilter(index, root) {
@@ -96,31 +109,19 @@ function updateFilter(index, root) {
             break;
 
         case 1:
-            var favoritesModel = Qt.createQmlObject(
-                'import SortFilterProxyModel 0.2; SortFilterProxyModel { sourceModel: api.allGames; filters: ValueFilter { roleName: "favorite"; value: true } }',
-                root
-            );
-            root.currentCollection = favoritesModel;
+            root.currentCollection = root.favoritesFilter;
             root.collectionFilter = "favorites";
             root.showingCollections = false;
             break;
 
         case 2:
-            var mostPlayedModel = Qt.createQmlObject(
-                'import SortFilterProxyModel 0.2; SortFilterProxyModel { sourceModel: api.allGames; filters: RangeFilter { roleName: "playCount"; minimumValue: 1 }; sorters: RoleSorter { roleName: "playCount"; sortOrder: Qt.DescendingOrder } }',
-                root
-            );
-            root.currentCollection = mostPlayedModel;
+            root.currentCollection = root.mostPlayedFilter;
             root.collectionFilter = "mostplayed";
             root.showingCollections = false;
             break;
 
         case 3:
-            var recentModel = Qt.createQmlObject(
-                'import SortFilterProxyModel 0.2; SortFilterProxyModel { sourceModel: api.allGames; filters: ExpressionFilter { expression: { var lp = model.lastPlayed; return lp && lp.getTime && lp.getTime() > 0; } }; sorters: RoleSorter { roleName: "lastPlayed"; sortOrder: Qt.DescendingOrder } }',
-                                                 root
-            );
-            root.currentCollection = recentModel;
+            root.currentCollection = root.recentlyPlayedFilter;
             root.collectionFilter = "recent";
             root.showingCollections = false;
             break;
@@ -279,7 +280,23 @@ function isFavorite(game, api) {
 }
 
 
-/*function debugFilterCounts(api) {
+/*function debugCollection(collection, name) {
+    console.log("=== " + name + " ===");
+    console.log("Count:", collection.count);
+    if (collection.count > 0) {
+        for (var i = 0; i < Math.min(collection.count, 5); i++) {
+            var game = collection.get(i);
+            console.log(i + ":", game.title,
+                        "- playTime:", game.playTime + "s (" + formatPlayTime(game.playTime) + ")",
+                        "- playCount:", game.playCount,
+                        "- favorite:", game.favorite,
+                        "- lastPlayed:", game.lastPlayed ? game.lastPlayed.toString() : "Never");
+        }
+    }
+    console.log("=================");
+}
+
+function debugFilterCounts(api) {
     console.log("=== Filter Debug ===");
     console.log("Total games:", api.allGames.count);
 
