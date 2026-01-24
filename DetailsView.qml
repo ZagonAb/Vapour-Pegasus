@@ -14,14 +14,29 @@ Item {
     property bool videoFullscreen: false
     property bool allowEscape: true
     property int currentButtonIndex: 0
-    property int totalButtons: 5
+    property int totalButtons: 6
     property bool videoHasStarted: false
+    property bool currentGameFavorite: currentGame ? Utils.isFavorite(currentGame, api) : false
+
+    onCurrentGameChanged: {
+        if (currentGame) {
+            currentGameFavorite = Utils.isFavorite(currentGame, api)
+            if (favoriteButton) {
+                favoriteButton.isFavorite = currentGameFavorite
+            }
+        }
+    }
 
     function show() {
         visible = true
         allowEscape = true
         currentButtonIndex = 0
         videoHasStarted = false
+
+        if (currentGame) {
+            currentGameFavorite = Utils.isFavorite(currentGame, api)
+        }
+
         if (themeRoot) {
             themeRoot.currentView = "details"
         }
@@ -338,6 +353,58 @@ Item {
                         onClicked: {
                             if (currentGame) {
                                 Utils.launchGame(currentGame, api)
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    id: favoriteButton
+                    width: vpx(50)
+                    height: vpx(50)
+                    color: currentButtonIndex === 5 && !videoFullscreen ? "#4a505a" : "#31383a"
+                    radius: vpx(2)
+
+                    border.width: currentButtonIndex === 5 && !videoFullscreen ? vpx(3) : 0
+                    border.color: "#FFFFFF"
+
+                    property bool isFavorite: detailsView.currentGameFavorite
+
+                    Behavior on color {
+                        ColorAnimation { duration: 150 }
+                    }
+
+                    Behavior on border.width {
+                        NumberAnimation { duration: 150 }
+                    }
+
+                    Image {
+                        id: favoriteIcon
+                        source: favoriteButton.isFavorite ? "assets/icons/favorite-yes.svg" : "assets/icons/favorite-no.svg"
+                        width: vpx(24)
+                        height: vpx(24)
+                        fillMode: Image.PreserveAspectFit
+                        anchors.centerIn: parent
+                        asynchronous: true
+                        visible: status === Image.Ready
+                        mipmap: true
+                    }
+
+                    Text {
+                        text: favoriteButton.isFavorite ? "★" : "☆"
+                        font.pixelSize: vpx(22)
+                        color: "#FFFFFF"
+                        anchors.centerIn: parent
+                        visible: favoriteIcon.status !== Image.Ready
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            if (currentGame) {
+                                var newState = Utils.toggleFavorite(currentGame, api, themeRoot)
+                                detailsView.currentGameFavorite = newState
+                                favoriteButton.isFavorite = newState
                             }
                         }
                     }
@@ -756,6 +823,57 @@ Item {
         Rectangle {
             width: vpx(45)
             height: vpx(45)
+            color: currentButtonIndex === 5 && videoFullscreen ? "#4a505a" : "#31383a"
+            radius: vpx(2)
+
+            border.width: currentButtonIndex === 5 && videoFullscreen ? vpx(3) : 0
+            border.color: "#FFFFFF"
+
+            property bool isFavorite: detailsView.currentGameFavorite
+
+            Behavior on color {
+                ColorAnimation { duration: 150 }
+            }
+
+            Behavior on border.width {
+                NumberAnimation { duration: 150 }
+            }
+
+            Image {
+                id: favoriteIconFloat
+                source: parent.isFavorite ? "assets/icons/favorite-yes.svg" : "assets/icons/favorite-no.svg"
+                width: vpx(22)
+                height: vpx(22)
+                fillMode: Image.PreserveAspectFit
+                anchors.centerIn: parent
+                asynchronous: true
+                visible: status === Image.Ready
+                mipmap: true
+            }
+
+            Text {
+                text: parent.isFavorite ? "★" : "☆"
+                font.pixelSize: vpx(20)
+                color: "#FFFFFF"
+                anchors.centerIn: parent
+                visible: favoriteIconFloat.status !== Image.Ready
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    if (currentGame) {
+                        var newState = Utils.toggleFavorite(currentGame, api, themeRoot)
+                        detailsView.currentGameFavorite = newState
+                        parent.isFavorite = newState
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            width: vpx(45)
+            height: vpx(45)
             color: currentButtonIndex === 1 && videoFullscreen ? "#4a505a" : "#31383a"
             radius: vpx(2)
 
@@ -992,51 +1110,116 @@ Item {
                 case 3:
                     if (videoHasStarted && themeRoot && themeRoot.videoOverlay) {
                         themeRoot.videoOverlay.toggleFullscreen()
-                    } else {
                     }
                     break
                 case 4:
                     if (videoHasStarted && themeRoot && themeRoot.videoOverlay) {
                         themeRoot.videoOverlay.toggleMute()
                         muteButton.isMuted = themeRoot.videoOverlay.isMuted
-                    } else {
+                    }
+                    break
+                case 5:
+                    if (currentGame) {
+                        var wasInFilteredView = (themeRoot.collectionFilter === "favorites" ||
+                        themeRoot.collectionFilter === "mostplayed" ||
+                        themeRoot.collectionFilter === "recent")
+                        var currentIndex = -1
+
+                        if (wasInFilteredView && themeRoot.currentCollection) {
+                            for (var i = 0; i < themeRoot.currentCollection.count; i++) {
+                                var game = themeRoot.currentCollection.get(i)
+                                if (game.title === currentGame.title) {
+                                    currentIndex = i
+                                    break
+                                }
+                            }
+                        }
+
+                        var newState = Utils.toggleFavorite(currentGame, api, themeRoot)
+                        detailsView.currentGameFavorite = newState
+                        favoriteButton.isFavorite = newState
+
+                        if (themeRoot.collectionFilter === "favorites" && !newState) {
+                            hide()
+
+                            Qt.callLater(function() {
+                                if (themeRoot.currentCollection && themeRoot.currentCollection.count > 0) {
+                                    var newIndex = Math.min(currentIndex, themeRoot.currentCollection.count - 1)
+                                    if (themeRoot.gameListView) {
+                                        themeRoot.gameListView.currentIndex = newIndex
+                                    }
+                                    themeRoot.currentGame = themeRoot.currentCollection.get(newIndex)
+                                } else {
+                                    Utils.updateFilter(0, themeRoot)
+                                }
+                            })
+                        }
                     }
                     break
             }
         }
         else if (event.key === Qt.Key_Left) {
             event.accepted = true
-            var nextIndex = currentButtonIndex - 1
 
             if (!videoHasStarted) {
-                if (nextIndex < 0) {
-                    nextIndex = 2
-                } else if (nextIndex === 4 || nextIndex === 3) {
-                    nextIndex = 2
+                if (currentButtonIndex === 0) {
+                    currentButtonIndex = 2
+                } else if (currentButtonIndex === 5) {
+                    currentButtonIndex = 0
+                } else if (currentButtonIndex === 1) {
+                    currentButtonIndex = 5
+                } else if (currentButtonIndex === 2) {
+                    currentButtonIndex = 1
+                } else {
+                    currentButtonIndex = 2
                 }
             } else {
-                if (nextIndex < 0) {
-                    nextIndex = totalButtons - 1
+
+                if (currentButtonIndex === 0) {
+                    currentButtonIndex = 4
+                } else if (currentButtonIndex === 5) {
+                    currentButtonIndex = 0
+                } else if (currentButtonIndex === 1) {
+                    currentButtonIndex = 5
+                } else if (currentButtonIndex === 2) {
+                    currentButtonIndex = 1
+                } else if (currentButtonIndex === 3) {
+                    currentButtonIndex = 2
+                } else if (currentButtonIndex === 4) {
+                    currentButtonIndex = 3
                 }
             }
-
-            currentButtonIndex = nextIndex
         }
         else if (event.key === Qt.Key_Right) {
             event.accepted = true
-            var nextIndex = currentButtonIndex + 1
 
             if (!videoHasStarted) {
-                if (nextIndex > 2) {
-                    nextIndex = 0
+                if (currentButtonIndex === 0) {
+                    currentButtonIndex = 5
+                } else if (currentButtonIndex === 5) {
+                    currentButtonIndex = 1
+                } else if (currentButtonIndex === 1) {
+                    currentButtonIndex = 2
+                } else if (currentButtonIndex === 2) {
+                    currentButtonIndex = 0
+                } else {
+                    currentButtonIndex = 0
                 }
             } else {
-                if (nextIndex >= totalButtons) {
-                    nextIndex = 0
+                if (currentButtonIndex === 0) {
+                    currentButtonIndex = 5
+                } else if (currentButtonIndex === 5) {
+                    currentButtonIndex = 1
+                } else if (currentButtonIndex === 1) {
+                    currentButtonIndex = 2
+                } else if (currentButtonIndex === 2) {
+                    currentButtonIndex = 3
+                } else if (currentButtonIndex === 3) {
+                    currentButtonIndex = 4
+                } else if (currentButtonIndex === 4) {
+                    currentButtonIndex = 0
                 }
             }
-
-            currentButtonIndex = nextIndex
         }
     }
 }

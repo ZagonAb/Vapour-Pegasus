@@ -1,3 +1,67 @@
+function hasFilterGames(filterIndex, api) {
+    switch(filterIndex) {
+        case 0:
+            return api.allGames.count > 0;
+
+        case 1:
+            for (var i = 0; i < api.allGames.count; i++) {
+                if (api.allGames.get(i).favorite) {
+                    return true;
+                }
+            }
+            return false;
+
+        case 2:
+            for (var i = 0; i < api.allGames.count; i++) {
+                if (api.allGames.get(i).playCount > 0) {
+                    return true;
+                }
+            }
+            return false;
+
+        case 3:
+            for (var i = 0; i < api.allGames.count; i++) {
+                var game = api.allGames.get(i);
+                var lastPlayed = game.lastPlayed;
+                if (lastPlayed &&
+                    lastPlayed.getTime &&
+                    lastPlayed.getTime() > 0) {
+                    return true;
+                    }
+            }
+            return false;
+
+        case 4:
+            return api.collections.count > 0;
+
+        default:
+            return false;
+    }
+}
+
+function getNextValidFilterIndex(currentIndex, direction, api) {
+    var filterCount = 5;
+    var attempts = 0;
+    var newIndex = currentIndex;
+
+    while (attempts < filterCount) {
+        if (direction === "next") {
+            newIndex = (newIndex + 1) % filterCount;
+        } else {
+            newIndex = (newIndex - 1 + filterCount) % filterCount;
+        }
+
+        if (hasFilterGames(newIndex, api)) {
+            return newIndex;
+        }
+
+        attempts++;
+    }
+
+    return currentIndex;
+}
+
+
 function formatPlayTime(seconds) {
     if (!seconds || seconds === 0) return "Not Played";
 
@@ -43,7 +107,7 @@ function updateFilter(index, root) {
 
         case 2:
             var mostPlayedModel = Qt.createQmlObject(
-                'import SortFilterProxyModel 0.2; SortFilterProxyModel { sourceModel: api.allGames; sorters: RoleSorter { roleName: "playCount"; sortOrder: Qt.DescendingOrder } }',
+                'import SortFilterProxyModel 0.2; SortFilterProxyModel { sourceModel: api.allGames; filters: RangeFilter { roleName: "playCount"; minimumValue: 1 }; sorters: RoleSorter { roleName: "playCount"; sortOrder: Qt.DescendingOrder } }',
                 root
             );
             root.currentCollection = mostPlayedModel;
@@ -53,8 +117,8 @@ function updateFilter(index, root) {
 
         case 3:
             var recentModel = Qt.createQmlObject(
-                'import SortFilterProxyModel 0.2; SortFilterProxyModel { sourceModel: api.allGames; sorters: RoleSorter { roleName: "lastPlayed"; sortOrder: Qt.DescendingOrder } }',
-                root
+                'import SortFilterProxyModel 0.2; SortFilterProxyModel { sourceModel: api.allGames; filters: ExpressionFilter { expression: { var lp = model.lastPlayed; return lp && lp.getTime && lp.getTime() > 0; } }; sorters: RoleSorter { roleName: "lastPlayed"; sortOrder: Qt.DescendingOrder } }',
+                                                 root
             );
             root.currentCollection = recentModel;
             root.collectionFilter = "recent";
@@ -130,3 +194,113 @@ function cleanGameTitle(title) {
 
         return cleanedTitle.trim();
 }
+
+function findOriginalGame(game, api) {
+    if (!game || !api || !api.allGames) {
+        return null;
+    }
+
+    var allGamesArray = api.allGames.toVarArray();
+
+    for (var i = 0; i < allGamesArray.length; i++) {
+        var originalGame = allGamesArray[i];
+
+        if (originalGame.title === game.title &&
+            originalGame.sortBy === game.sortBy) {
+            return originalGame;
+            }
+    }
+
+    return null;
+}
+
+function toggleFavorite(game, api, root) {
+    if (!game || !api) {
+        return false;
+    }
+
+    var originalGame = findOriginalGame(game, api);
+
+    if (!originalGame) {
+        return false;
+    }
+
+    var wasInFavorites = root && root.collectionFilter === "favorites";
+    var wasLastFavorite = false;
+
+    if (wasInFavorites && originalGame.favorite) {
+        var favoriteCount = 0;
+        for (var i = 0; i < api.allGames.count; i++) {
+            if (api.allGames.get(i).favorite) {
+                favoriteCount++;
+            }
+        }
+        wasLastFavorite = (favoriteCount === 1);
+    }
+
+    originalGame.favorite = !originalGame.favorite;
+
+    if (wasLastFavorite && !originalGame.favorite && root) {
+        Qt.callLater(function() {
+            root.collectionFilter = "all";
+            root.currentCollection = api.allGames;
+            root.showingCollections = false;
+
+            if (root.gameListView) {
+                root.gameListView.currentIndex = 0;
+            }
+
+            var filterListView = root.children[0];
+            for (var i = 0; i < root.children.length; i++) {
+                var child = root.children[i];
+                if (child.objectName === "unifiedFilterListView") {
+                    child.currentIndex = 0;
+                    break;
+                }
+            }
+        });
+    }
+
+    return originalGame.favorite;
+}
+
+function isFavorite(game, api) {
+    if (!game || !api) {
+        return false;
+    }
+
+    var originalGame = findOriginalGame(game, api);
+
+    if (!originalGame) {
+        return false;
+    }
+
+    return originalGame.favorite;
+}
+
+
+/*function debugFilterCounts(api) {
+    console.log("=== Filter Debug ===");
+    console.log("Total games:", api.allGames.count);
+
+    var favCount = 0;
+    var playedCount = 0;
+    var recentCount = 0;
+
+    for (var i = 0; i < api.allGames.count; i++) {
+        var game = api.allGames.get(i);
+        if (game.favorite) favCount++;
+        if (game.playCount > 0) playedCount++;
+
+        var lp = game.lastPlayed;
+        if (lp && lp.getTime && lp.getTime() > 0) {
+            recentCount++;
+            console.log("Recently played:", game.title, "at", lp);
+        }
+    }
+
+    console.log("Favorites:", favCount);
+    console.log("Most Played:", playedCount);
+    console.log("Recently Played:", recentCount);
+    console.log("==================");
+}*/

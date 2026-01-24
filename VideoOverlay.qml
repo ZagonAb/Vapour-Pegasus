@@ -25,7 +25,6 @@ Item {
 
         fillMode: VideoOutput.PreserveAspectCrop
         autoPlay: false
-        loops: MediaPlayer.Once
         volume: videoOverlay.volume
 
         source: {

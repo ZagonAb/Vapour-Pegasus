@@ -17,6 +17,7 @@ FocusScope {
     property var videoOverlay: videoOverlayComponent
     property string currentLetter: ""
     property var letterIndex: []
+    property var gameListView: gameListView
 
     FocusManager {
         id: focusManager
@@ -30,6 +31,8 @@ FocusScope {
         if (api.allGames.count > 0) {
             currentGame = api.allGames.get(0)
         }
+
+        //Utils.debugFilterCounts(api);
 
         /*var savedIndex = api.memory.get('lastGameIndex')
         if (savedIndex !== undefined && savedIndex < api.allGames.count) {
@@ -93,6 +96,17 @@ FocusScope {
             gameListView.currentIndex = letterIndex[letterIndex.length - 1].index
             currentLetter = letterIndex[letterIndex.length - 1].letter
             letterTimer.restart()
+    }
+
+    function validateCurrentFilter() {
+        if (!showingCollections && !Utils.hasFilterGames(unifiedFilterListView.currentIndex, api)) {
+            unifiedFilterListView.currentIndex = 0
+            Utils.updateFilter(0, root)
+            gameListView.currentIndex = 0
+            if (currentCollection.count > 0) {
+                currentGame = currentCollection.get(0)
+            }
+        }
     }
 
     Rectangle {
@@ -472,6 +486,13 @@ FocusScope {
                     }
                 }
                 buildLetterIndex()
+                filterValidationTimer.restart()
+            }
+
+            Timer {
+                id: filterValidationTimer
+                interval: 100
+                onTriggered: validateCurrentFilter()
             }
 
             delegate: Item {
@@ -919,8 +940,9 @@ FocusScope {
 
             ListView {
                 id: unifiedFilterListView
+                objectName: "unifiedFilterListView"
                 anchors.centerIn: parent
-                width: showingCollections ? parent.width : contentWidth
+                width: showingCollections ? parent.width : Math.max(contentWidth, vpx(100))
                 height: vpx(50)
                 orientation: ListView.Horizontal
                 spacing: vpx(30)
@@ -1038,8 +1060,29 @@ FocusScope {
                     height: vpx(50)
 
                     property bool isCurrent: unifiedFilterListView.currentIndex === index
-                    property string itemName: showingCollections ? modelData.name : modelData
+                    property string itemName: {
+                        if (showingCollections) {
+                            return modelData && modelData.name ? modelData.name : ""
+                        } else {
+                            return modelData ? modelData : ""
+                        }
+                    }
                     property bool hasFocus: unifiedFilterListView.focus
+                    property bool isEnabled: {
+                        if (showingCollections) {
+                            return true
+                        }
+                        if (typeof index === 'number' && index >= 0) {
+                            return Utils.hasFilterGames(index, api)
+                        }
+                        return false
+                    }
+
+                    opacity: isEnabled ? 1.0 : 0.4
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: 200 }
+                    }
 
                     Item {
                         id: delegateContainer
@@ -1081,6 +1124,9 @@ FocusScope {
                             font.pixelSize: vpx(18)
                             font.family: global.fonts.sans
                             color: {
+                                if (!unifiedDelegate.isEnabled) {
+                                    return "#666666"
+                                }
                                 if (isCurrent && hasFocus) {
                                     return "#000000"
                                 } else if (isCurrent && !hasFocus) {
@@ -1129,18 +1175,36 @@ FocusScope {
                 Keys.onPressed: {
                     if (event.key === Qt.Key_Left) {
                         event.accepted = true
-                        if (unifiedFilterListView.currentIndex > 0) {
-                            unifiedFilterListView.currentIndex--
+                        if (!showingCollections) {
+                            var newIndex = Utils.getNextValidFilterIndex(
+                                unifiedFilterListView.currentIndex,
+                                "prev",
+                                api
+                            )
+                            unifiedFilterListView.currentIndex = newIndex
                         } else {
-                            unifiedFilterListView.currentIndex = unifiedFilterListView.count - 1
+                            if (unifiedFilterListView.currentIndex > 0) {
+                                unifiedFilterListView.currentIndex--
+                            } else {
+                                unifiedFilterListView.currentIndex = unifiedFilterListView.count - 1
+                            }
                         }
                     }
                     else if (event.key === Qt.Key_Right) {
                         event.accepted = true
-                        if (unifiedFilterListView.currentIndex < unifiedFilterListView.count - 1) {
-                            unifiedFilterListView.currentIndex++
+                        if (!showingCollections) {
+                            var newIndex = Utils.getNextValidFilterIndex(
+                                unifiedFilterListView.currentIndex,
+                                "next",
+                                api
+                            )
+                            unifiedFilterListView.currentIndex = newIndex
                         } else {
-                            unifiedFilterListView.currentIndex = 0
+                            if (unifiedFilterListView.currentIndex < unifiedFilterListView.count - 1) {
+                                unifiedFilterListView.currentIndex++
+                            } else {
+                                unifiedFilterListView.currentIndex = 0
+                            }
                         }
                     }
                     else if (api.keys.isNextPage(event)) {
