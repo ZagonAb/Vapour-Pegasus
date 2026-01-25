@@ -8,31 +8,46 @@ QtObject {
     property var homeView: null
     property var detailsView: null
     property var gameListView: null
+    property var gameGridView: null
     property var filterListView: null
+    property var themeRoot: null
 
     function setFocus(elementName) {
-        currentFocus = elementName
+            console.log("FocusManager: Setting focus to", elementName, "isGridViewMode:", themeRoot ? themeRoot.isGridViewMode : "no themeRoot")
+            currentFocus = elementName
 
-        switch(elementName) {
-            case "gameList":
-                if (gameListView) {
-                    gameListView.focus = true
+            switch(elementName) {
+                case "gameList":
+                    var isGridMode = themeRoot ? themeRoot.isGridViewMode : false
+
+                    if (isGridMode && gameGridView) {
+                        console.log("Setting focus to GridView")
+                        gameGridView.forceActiveFocus()
+                        if (gameListView) gameListView.focus = false
+                    } else if (gameListView) {
+                        console.log("Setting focus to ListView")
+                        gameListView.forceActiveFocus()
+                        if (gameGridView) gameGridView.focus = false
+                    }
                     if (filterListView) filterListView.focus = false
-                }
-                break
+                        break
 
             case "filterSelector":
                 if (filterListView) {
-                    filterListView.focus = true
+                    console.log("Setting focus to filterListView")
+                    filterListView.forceActiveFocus()
                     if (gameListView) gameListView.focus = false
+                        if (gameGridView) gameGridView.focus = false
                 }
                 break
 
             case "details":
                 if (detailsView) {
-                    detailsView.focus = true
+                    console.log("Setting focus to detailsView")
+                    detailsView.forceActiveFocus()
                     if (gameListView) gameListView.focus = false
-                        if (filterListView) filterListView.focus = false
+                        if (gameGridView) gameGridView.focus = false
+                            if (filterListView) filterListView.focus = false
                 }
                 break
         }
@@ -52,7 +67,6 @@ QtObject {
     }
 
     function handleBack() {
-
         if (currentView === "details") {
             switchView("home")
                 return true
@@ -67,9 +81,11 @@ QtObject {
     }
 
     function handleDown() {
-
         if (currentView === "home") {
             if (currentFocus === "gameList") {
+                if (homeView.isGridViewMode) {
+                    return false
+                }
                 setFocus("filterSelector")
                 return true
             }
@@ -78,7 +94,6 @@ QtObject {
     }
 
     function handleUp() {
-
         if (currentView === "home") {
             if (currentFocus === "filterSelector") {
                 setFocus("gameList")
@@ -92,5 +107,17 @@ QtObject {
     }
 
     function exitCollectionsView() {
+    }
+
+    onGameListViewChanged: {
+        if (gameListView && currentFocus === "gameList") {
+            gameListView.focus = true
+        }
+    }
+
+    onGameGridViewChanged: {
+        if (gameGridView && currentFocus === "gameList") {
+            gameGridView.focus = true
+        }
     }
 }

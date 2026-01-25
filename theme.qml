@@ -17,11 +17,13 @@ FocusScope {
     property var videoOverlay: videoOverlayComponent
     property string currentLetter: ""
     property var letterIndex: []
-    property var gameListView: gameListView
-
+    property var focusManager: focusManager
+    property var gameListView: gameViewLoader.item
+    property var gameGridView: gameViewLoader.item
     property var favoritesFilter: favoritesFilterModel
     property var mostPlayedFilter: mostPlayedFilterModel
     property var recentlyPlayedFilter: recentlyPlayedFilterModel
+    readonly property bool isGridViewMode: viewToggleButton.isGridView
 
     FavoritesFilter {
         id: favoritesFilterModel
@@ -39,21 +41,16 @@ FocusScope {
         id: focusManager
         homeView: homeView
         detailsView: detailsViewComponent
-        gameListView: gameListView
+        gameListView: gameViewLoader.item
         filterListView: unifiedFilterListView
+        gameGridView: gameViewLoader.item
+        themeRoot: root
     }
 
     Component.onCompleted: {
         if (api.allGames.count > 0) {
             currentGame = api.allGames.get(0)
         }
-
-        /*Utils.debugFilterCounts(api);
-
-        var savedIndex = api.memory.get('lastGameIndex')
-        if (savedIndex !== undefined && savedIndex < api.allGames.count) {
-            gameListView.currentIndex = savedIndex
-        }*/
     }
 
     function buildLetterIndex() {
@@ -81,7 +78,7 @@ FocusScope {
     }
 
     function jumpToNextLetter() {
-        if (letterIndex.length === 0) return
+        if (letterIndex.length === 0 || !gameListView) return
 
             var currentIndex = gameListView.currentIndex
             for (var i = 0; i < letterIndex.length; i++) {
@@ -98,7 +95,7 @@ FocusScope {
     }
 
     function jumpToPrevLetter() {
-        if (letterIndex.length === 0) return
+        if (letterIndex.length === 0 || !gameListView) return
 
             var currentIndex = gameListView.currentIndex
             for (var i = letterIndex.length - 1; i >= 0; i--) {
@@ -118,7 +115,9 @@ FocusScope {
         if (!showingCollections && !Utils.hasFilterGames(unifiedFilterListView.currentIndex, api)) {
             unifiedFilterListView.currentIndex = 0
             Utils.updateFilter(0, root)
-            gameListView.currentIndex = 0
+            if (gameListView) {
+                gameListView.currentIndex = 0
+            }
             if (currentCollection.count > 0) {
                 currentGame = currentCollection.get(0)
             }
@@ -128,7 +127,7 @@ FocusScope {
     Rectangle {
         id: allOverlay
         anchors.fill: parent
-        color: "#000000"
+        color: "transparent"
 
         Image {
             id: backgroundImage
@@ -204,6 +203,7 @@ FocusScope {
         height: vpx(50)
         color: "transparent"
         anchors.top: parent.top
+        z: 10
 
         Row {
             id: contentRow
@@ -211,6 +211,102 @@ FocusScope {
             anchors.rightMargin: vpx(30)
             anchors.verticalCenter: parent.verticalCenter
             spacing: vpx(15)
+
+            Rectangle {
+                id: viewToggleButton
+                width: vpx(40)
+                height: vpx(40)
+                radius: vpx(4)
+                color: "transparent"
+
+                property bool isGridView: {
+                    if (api.memory.has('viewMode')) {
+                        return api.memory.get('viewMode') === 'grid'
+                    }
+                    return false
+                }
+
+                property bool hovered: false
+
+                Behavior on color {
+                    ColorAnimation { duration: 150 }
+                }
+
+                Image {
+                    id: viewIcon
+                    anchors.centerIn: parent
+                    width: vpx(24)
+                    height: vpx(24)
+                    source: viewToggleButton.isGridView ?
+                    "assets/icons/listview.svg" :
+                    "assets/icons/gridview.svg"
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    mipmap: true
+                    layer.enabled: true
+                    layer.effect: DropShadow {
+                        horizontalOffset: 0
+                        verticalOffset: 0
+                        radius: vpx(8)
+                        samples: 17
+                        color: "#80000000"
+                        spread: 0.2
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: viewToggleButton.isGridView ? "L" : "G"
+                    font.pixelSize: vpx(18)
+                    font.family: global.fonts.sans
+                    font.bold: true
+                    color: "#FFFFFF"
+                    visible: viewIcon.status !== Image.Ready
+                    layer.enabled: true
+                    layer.effect: DropShadow {
+                        horizontalOffset: 0
+                        verticalOffset: 0
+                        radius: vpx(8)
+                        samples: 17
+                        color: "#80000000"
+                        spread: 0.2
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+
+                    onEntered: {
+                        viewToggleButton.hovered = true
+                        viewToggleButton.color = "#20333333"
+                    }
+
+                    onExited: {
+                        viewToggleButton.hovered = false
+                        viewToggleButton.color = "transparent"
+                    }
+
+                    onClicked: {
+                        var newViewMode = viewToggleButton.isGridView ? 'list' : 'grid'
+
+                        api.memory.set('viewMode', newViewMode)
+
+                        viewToggleButton.isGridView = (newViewMode === 'grid')
+
+                        if (focusManager) {
+                            if (newViewMode === 'grid') {
+                                focusManager.gameListView = null
+                                focusManager.gameGridView = gameViewLoader.item
+                            } else {
+                                focusManager.gameGridView = null
+                                focusManager.gameListView = gameViewLoader.item
+                            }
+                            focusManager.setFocus("gameList")
+                        }
+                    }
+                }
+            }
 
             Image {
                 id: pegasusLogo
@@ -296,6 +392,13 @@ FocusScope {
             anchors.topMargin: vpx(100)
             spacing: vpx(20)
             width: parent.width - vpx(120)
+            opacity: isGridViewMode ? 0 : 1
+            visible: opacity > 0
+            z: 5
+
+            Behavior on opacity {
+                NumberAnimation { duration: 100 }
+            }
 
             Item {
                 width: vpx(400)
@@ -304,7 +407,7 @@ FocusScope {
                 readonly property var game: {
                     if (!currentGame) return null
                         if (showingCollections && currentCollection &&
-                            gameListView.currentIndex >= 0 &&
+                            gameListView && gameListView.currentIndex >= 0 &&
                             gameListView.currentIndex < currentCollection.count) {
                             return currentCollection.get(gameListView.currentIndex)
                             }
@@ -347,7 +450,7 @@ FocusScope {
                 readonly property string displayTitle: {
                     if (showingCollections) {
                         if (currentCollection && currentCollection.count > 0 &&
-                            gameListView.currentIndex >= 0 &&
+                            gameListView && gameListView.currentIndex >= 0 &&
                             gameListView.currentIndex < currentCollection.count) {
                             var game = currentCollection.get(gameListView.currentIndex)
                             return game ? (Utils.cleanGameTitle(game.title) || "Unknown") : "No games"
@@ -467,493 +570,120 @@ FocusScope {
             }
         }
 
-        ListView {
-            id: gameListView
+        Loader {
+            id: gameViewLoader
             anchors.left: parent.left
-            anchors.leftMargin: vpx(40)
             anchors.right: parent.right
-            anchors.rightMargin: vpx(40)
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.verticalCenterOffset: vpx(125)
-            height: vpx(300)
-            orientation: ListView.Horizontal
-            spacing: vpx(2)
-            clip: false
-            focus: currentView === "home" && focusManager.currentFocus === "gameList"
 
-            preferredHighlightBegin: vpx(0)
-            preferredHighlightEnd: width - vpx(120)
-            highlightRangeMode: ListView.ApplyRange
-            highlightMoveDuration: 250
-            highlightFollowsCurrentItem: true
-            cacheBuffer: vpx(1000)
-            displayMarginBeginning: vpx(500)
-            displayMarginEnd: vpx(500)
+            anchors.top: isGridViewMode ? filterContainer.bottom : undefined
+            anchors.topMargin: isGridViewMode ? vpx(20) : undefined
+            anchors.verticalCenter: isGridViewMode ? undefined : parent.verticalCenter
+            anchors.verticalCenterOffset: isGridViewMode ? 0 : vpx(125)
 
-            property bool isShowingCollections: showingCollections
+            anchors.bottom: isGridViewMode ? keyHints.top : undefined
+            anchors.bottomMargin: isGridViewMode ? vpx(10) : undefined
 
-            model: currentCollection
+            height: isGridViewMode ? undefined : vpx(300)
+            active: true
+            z: 4
 
-            onCurrentIndexChanged: {
-                if (!showingCollections && currentItem && model) {
-                    currentGame = model.get(currentIndex)
-                } else if (showingCollections && currentItem && model) {
-                    if (model.count > 0 && currentIndex >= 0 && currentIndex < model.count) {
-                        currentGame = model.get(currentIndex)
-                    }
-                }
-                buildLetterIndex()
-                filterValidationTimer.restart()
-            }
+            sourceComponent: viewToggleButton.isGridView ? gridViewComponent : listViewComponent
 
-            Timer {
-                id: filterValidationTimer
-                interval: 100
-                onTriggered: validateCurrentFilter()
-            }
+            onLoaded: {
+                if (item) {
+                    item.anchors.fill = item.parent
 
-            delegate: Item {
-                width: vpx(180)
-                height: vpx(245)
-
-                property bool isSelected: ListView.isCurrentItem
-                property bool hasFocus: gameListView.focus
-                property bool shouldShowReflection: false
-
-                scale: isSelected ? 1.1 : 0.9
-                z: isSelected ? 10 : 1
-
-                Behavior on scale {
-                    NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-                }
-
-                onIsSelectedChanged: {
-                    if (isSelected && hasFocus) {
-                        shouldShowReflection = true
-                        reflectionEffect.reflectionProgress = 0.0
-                        reflectionEffect.timerRunning = true
+                    if (viewToggleButton.isGridView) {
+                        focusManager.gameGridView = item
+                        focusManager.gameListView = null
                     } else {
-                        shouldShowReflection = false
-                        reflectionEffect.timerRunning = false
-                    }
-                }
-
-                onHasFocusChanged: {
-                    if (isSelected && hasFocus) {
-                        shouldShowReflection = true
-                        reflectionEffect.reflectionProgress = 0.0
-                        reflectionEffect.timerRunning = true
-                    } else {
-                        shouldShowReflection = false
-                        reflectionEffect.timerRunning = false
-                    }
-                }
-
-                property string imageSource: {
-                    if (modelData.assets.background && modelData.assets.background !== "") {
-                        return modelData.assets.background
-                    } else if (modelData.assets.screenshot && modelData.assets.screenshot !== "") {
-                        return modelData.assets.screenshot
-                    }
-                    return ""
-                }
-
-                Item {
-                    anchors.fill: parent
-                    anchors.margins: vpx(-7)
-
-                    Rectangle {
-                        id: cardBackground
-                        anchors.fill: parent
-                        color: "#1A1A1A"
-                        radius: vpx(12)
-
-                        Image {
-                            id: cardImage
-                            anchors.fill: parent
-                            source: imageSource
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            visible: false
-
-                            onStatusChanged: {
-                                if (status === Image.Error) {
-                                } else if (status === Image.Ready) {
-                                } else if (status === Image.Loading) {
-                                } else if (status === Image.Null) {
-                                }
-                            }
-                        }
-
-                        OpacityMask {
-                            anchors.fill: cardImage
-                            source: cardImage
-                            maskSource: Rectangle {
-                                width: cardImage.width
-                                height: cardImage.height
-                                radius: vpx(12)
-                            }
-                        }
-
-                        Item {
-                            anchors.centerIn: parent
-                            width: parent.width * 0.8
-                            height: parent.height * 0.5
-
-                            Image {
-                                id: logoOverlay
-                                anchors.centerIn: parent
-                                width: parent.width * 0.9
-                                height: parent.height * 0.8
-                                source: modelData.assets.logo || ""
-                                fillMode: Image.PreserveAspectFit
-                                asynchronous: true
-                                mipmap: true
-                                visible: status === Image.Ready
-                            }
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.title || ""
-                                font.pixelSize: vpx(20)
-                                font.family: global.fonts.sans
-                                font.bold: true
-                                color: "#FFFFFF"
-                                style: Text.Outline
-                                styleColor: "#000000"
-                                visible: logoOverlay.status !== Image.Ready
-                                width: parent.width
-                                horizontalAlignment: Text.AlignHCenter
-                                wrapMode: Text.WordWrap
-                                maximumLineCount: 3
-                                elide: Text.ElideRight
-                            }
-                        }
-
-                        Item {
-                            id: reflectionContainer
-                            anchors.fill: parent
-                            visible: shouldShowReflection
-
-                            ShaderEffect {
-                                id: reflectionEffect
-                                anchors.fill: parent
-                                visible: false
-                                opacity: shouldShowReflection ? 0.8 : 0
-
-                                property real reflectionProgress: 0.0
-                                property color reflectionColor: "#FFFFFF"
-                                property real reflectionWidth: 0.35
-                                property real intensity: 0.5
-                                property bool timerRunning: false
-
-                                Timer {
-                                    id: reflectionTimer
-                                    interval: 25
-                                    running: reflectionEffect.timerRunning
-                                    repeat: true
-                                    onTriggered: {
-                                        reflectionEffect.reflectionProgress += 0.04
-                                        if (reflectionEffect.reflectionProgress > 1.5) {
-                                            reflectionEffect.reflectionProgress = 1.5
-                                            reflectionEffect.timerRunning = false
-                                        }
-                                    }
-                                }
-
-                                vertexShader: "
-                                uniform highp mat4 qt_Matrix;
-                                attribute highp vec4 qt_Vertex;
-                                attribute highp vec2 qt_MultiTexCoord0;
-                                varying highp vec2 coord;
-                                void main() {
-                                coord = qt_MultiTexCoord0;
-                                gl_Position = qt_Matrix * qt_Vertex;
-                            }"
-
-                            fragmentShader: "
-                            varying highp vec2 coord;
-                            uniform lowp float qt_Opacity;
-                            uniform lowp float reflectionProgress;
-                            uniform lowp float reflectionWidth;
-                            uniform lowp float intensity;
-                            uniform lowp vec4 reflectionColor;
-
-                            void main() {
-                            if (reflectionProgress >= 1.5) {
-                                gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-                                return;
-                            }
-
-                            highp vec2 normalizedCoord = coord;
-                            highp float diagonalLine = normalizedCoord.x + normalizedCoord.y;
-                            highp float reflectionPos = diagonalLine * 0.5;
-                            highp float movingReflection = reflectionProgress - reflectionPos;
-                            highp float distanceFromReflection = abs(movingReflection);
-
-                            highp float gradientFactor;
-                            if (distanceFromReflection < reflectionWidth) {
-                                gradientFactor = 1.0 - (distanceFromReflection / reflectionWidth);
-                                gradientFactor = smoothstep(0.0, 1.0, gradientFactor);
-                            } else {
-                                gradientFactor = 0.0;
-                            }
-
-                            highp float alpha = gradientFactor * intensity * reflectionColor.a * qt_Opacity;
-                            highp vec3 color = reflectionColor.rgb * alpha;
-
-                            gl_FragColor = vec4(color, alpha);
-                            }"
-
-                            Behavior on opacity {
-                                NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
-                            }
-
-                            onTimerRunningChanged: {
-                                if (!timerRunning && reflectionProgress >= 1.5) {
-                                    fadeOutTimer.start()
-                                }
-                            }
-
-                            Timer {
-                                id: fadeOutTimer
-                                interval: 200
-                                onTriggered: {
-                                    shouldShowReflection = false
-                                }
-                            }
-                            }
-
-                            OpacityMask {
-                                anchors.fill: reflectionEffect
-                                source: reflectionEffect
-                                maskSource: Rectangle {
-                                    width: reflectionEffect.width
-                                    height: reflectionEffect.height
-                                    radius: vpx(12)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Canvas {
-                    id: gradientBorder
-                    anchors.fill: parent
-                    anchors.margins: -vpx(8)
-                    opacity: (isSelected && hasFocus) ? 1 : 0
-
-                    property real progress: 0.0
-                    property real speed: 0.0040
-                    property bool running: false
-
-                    Behavior on opacity {
-                        NumberAnimation { duration: 200 }
+                        focusManager.gameListView = item
+                        focusManager.gameGridView = null
                     }
 
-                    Timer {
-                        id: sweepTimer
-                        interval: 16
-                        repeat: true
-                        running: gradientBorder.running
-                        onTriggered: {
-                            gradientBorder.progress += gradientBorder.speed
-                            if (gradientBorder.progress >= 1.0) {
-                                gradientBorder.progress = 1.0
-                                gradientBorder.running = false
-                            }
-                            gradientBorder.requestPaint()
-                        }
-                    }
-
-                    onOpacityChanged: {
-                        if (opacity === 1) {
-                            progress = 0.0
-                            running = true
-                            requestPaint()
-                        }
-                    }
-
-                    onPaint: {
-                        var ctx = getContext("2d")
-                        var w = width
-                        var h = height
-                        var r = vpx(12)
-                        var borderWidth = vpx(3)
-                        var offset = borderWidth / 2
-
-                        ctx.clearRect(0, 0, w, h)
-
-                        var straightW = w - 2 * r - borderWidth
-                        var straightH = h - 2 * r - borderWidth
-                        var corner = Math.PI * r / 2
-
-                        var perimeter =
-                        2 * straightW +
-                        2 * straightH +
-                        4 * corner
-
-                        var startOffset =
-                        straightW +
-                        corner +
-                        straightH +
-                        corner +
-                        straightW
-
-
-                        var dist = (progress * perimeter + startOffset) % perimeter
-
-                        function pointOnBorder(d) {
-                            if (d < straightW)
-                                return { x: r + offset + d, y: offset }
-
-                                d -= straightW
-                                if (d < corner) {
-                                    var a = d / corner * Math.PI / 2
-                                    return {
-                                        x: w - r - offset + Math.sin(a) * r,
-                                        y: r + offset - Math.cos(a) * r
-                                    }
-                                }
-
-                                d -= corner
-                                if (d < straightH)
-                                    return { x: w - offset, y: r + offset + d }
-
-                                    d -= straightH
-                                    if (d < corner) {
-                                        var a = d / corner * Math.PI / 2
-                                        return {
-                                            x: w - r - offset + Math.cos(a) * r,
-                                            y: h - r - offset + Math.sin(a) * r
-                                        }
-                                    }
-
-                                    d -= corner
-                                    if (d < straightW)
-                                        return { x: w - r - offset - d, y: h - offset }
-
-                                        d -= straightW
-                                        if (d < corner) {
-                                            var a = d / corner * Math.PI / 2
-                                            return {
-                                                x: r + offset - Math.sin(a) * r,
-                                                y: h - r - offset + Math.cos(a) * r
-                                            }
-                                        }
-
-                                        d -= corner
-                                        if (d < straightH)
-                                            return { x: offset, y: h - r - offset - d }
-
-                                            d -= straightH
-                                            var a = d / corner * Math.PI / 2
-                                            return {
-                                                x: r + offset - Math.cos(a) * r,
-                                                y: r + offset - Math.sin(a) * r
-                                            }
-                        }
-
-                        var p = pointOnBorder(dist)
-                        var glow = ctx.createRadialGradient(
-                            p.x, p.y, 0,
-                            p.x, p.y, vpx(60)
-                        )
-                        glow.addColorStop(0.0, "#bae5f5")
-                        glow.addColorStop(0.25, "#bae5f5")
-                        glow.addColorStop(1.0, "#397499")
-
-                        ctx.strokeStyle = glow
-                        ctx.lineWidth = borderWidth
-                        ctx.lineCap = "round"
-                        ctx.lineJoin = "round"
-
-                        ctx.beginPath()
-                        ctx.moveTo(r + offset, offset)
-                        ctx.lineTo(w - r - offset, offset)
-                        ctx.quadraticCurveTo(w - offset, offset, w - offset, r + offset)
-                        ctx.lineTo(w - offset, h - r - offset)
-                        ctx.quadraticCurveTo(w - offset, h - offset, w - r - offset, h - offset)
-                        ctx.lineTo(r + offset, h - offset)
-                        ctx.quadraticCurveTo(offset, h - offset, offset, h - r - offset)
-                        ctx.lineTo(offset, r + offset)
-                        ctx.quadraticCurveTo(offset, offset, r + offset, offset)
-                        ctx.closePath()
-                        ctx.stroke()
+                    if (currentView === "home" && focusManager.currentFocus === "gameList") {
+                        item.forceActiveFocus()
                     }
                 }
             }
+        }
 
-            Keys.onPressed: {
-                if (!event.isAutoRepeat && api.keys.isAccept(event)) {
-                    event.accepted = true
-                    Utils.launchGame(currentGame, api)
+        Component {
+            id: listViewComponent
+            GameListView {
+                currentCollection: root.currentCollection
+                currentGameRef: root.currentGame
+                showingCollections: root.showingCollections
+                focusManagerRef: focusManager
+                detailsViewRef: detailsViewComponent
+                currentView: root.currentView
+                themeRoot: root
+
+                onGameChanged: {
+                    root.currentGame = game
                 }
-                else if (api.keys.isDetails(event)) {
-                    event.accepted = true
-                    detailsViewComponent.show()
-                    focusManager.switchView("details")
+
+                onLetterIndexRequested: {
+                    root.buildLetterIndex()
                 }
-                else if (api.keys.isNextPage(event)) {
-                    event.accepted = true
-                    jumpToNextLetter()
+
+                onFilterValidationRequested: {
+                    root.validateCurrentFilter()
                 }
-                else if (api.keys.isPrevPage(event)) {
-                    event.accepted = true
-                    jumpToPrevLetter()
+
+                Component.onCompleted: {
+                    focusManager.gameListView = this
+                    focusManager.gameGridView = null
                 }
-                else if (api.keys.isFilters(event)) {
-                    event.accepted = true
-                    if (!showingCollections) {
-                        showingCollections = true
-                        unifiedFilterListView.currentIndex = 0
-                        if (api.collections.count > 0) {
-                            currentCollection = api.collections.get(0).games
-                            if (currentCollection.count > 0) {
-                                currentGame = currentCollection.get(0)
-                            }
-                        }
-                        gameListView.currentIndex = 0
-                        focusManager.enterCollectionsView()
-                    } else {
-                        showingCollections = false
-                        unifiedFilterListView.currentIndex = 0
-                        currentCollection = api.allGames
-                        gameListView.currentIndex = 0
-                        if (currentCollection.count > 0) {
-                            currentGame = currentCollection.get(0)
-                        }
-                        focusManager.exitCollectionsView()
-                    }
+            }
+        }
+
+        Component {
+            id: gridViewComponent
+            GameGridView {
+                currentCollection: root.currentCollection
+                currentGameRef: root.currentGame
+                showingCollections: root.showingCollections
+                focusManagerRef: focusManager
+                detailsViewRef: detailsViewComponent
+                currentView: root.currentView
+                themeRoot: root
+
+                property int columns: 7
+                property real aspectRatio: 1.5
+                cellWidth: width / columns
+                cellHeight: cellWidth * aspectRatio
+
+                onGameChanged: {
+                    root.currentGame = game
                 }
-                else if (event.key === Qt.Key_Up) {
-                    event.accepted = true
-                    focusManager.handleUp()
+
+                onLetterIndexRequested: {
+                    root.buildLetterIndex()
                 }
-                else if (event.key === Qt.Key_Down) {
-                    event.accepted = true
-                    focusManager.handleDown()
+
+                onFilterValidationRequested: {
+                    root.validateCurrentFilter()
                 }
-                else if (api.keys.isCancel(event)) {
-                    if (showingCollections) {
-                        event.accepted = true
-                        focusManager.setFocus("filterSelector")
-                    } else {
-                        if (focusManager.handleBack()) {
-                            event.accepted = true
-                        }
-                    }
+
+                Component.onCompleted: {
+                    focusManager.gameGridView = this
+                    focusManager.gameListView = null
                 }
             }
         }
 
         Item {
             id: filterContainer
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: keyHints.top
-            anchors.bottomMargin: vpx(10)
             width: showingCollections ? root.width * 0.8 : Math.min(parent.width - vpx(120), vpx(800))
             height: vpx(50)
+            z: 6
+
+            x: showingCollections ?
+            (parent.width - width) / 2 :
+            (parent.width - width) / 2 + vpx(60)
+
+            y: isGridViewMode ? (topBar.height - vpx(20)) : (parent.height - keyHints.height - vpx(62))
 
             ListView {
                 id: unifiedFilterListView
@@ -975,6 +705,7 @@ FocusScope {
 
                 property var currentModel: showingCollections ? api.collections : filterModel
                 property var filterModel: ["All", "Favorites", "Most Played", "Recently Played", "Collections"]
+                property var focusManagerRef: focusManager
 
                 model: currentModel
 
@@ -1162,39 +893,14 @@ FocusScope {
                     }
                 }
 
-                /*onCurrentIndexChanged: {
-                    if (showingCollections && currentItem) {
-                        selectedCollectionIndex = currentIndex
-                        var collection = api.collections.get(currentIndex)
-                        currentCollection = collection.games
-                        gameListView.currentIndex = 0
-                        if (currentCollection.count > 0) {
-                            currentGame = currentCollection.get(0)
-                        }
-                    } else if (!showingCollections) {
-                        if (currentIndex === 4) {
-                            showingCollections = true
-                            unifiedFilterListView.currentIndex = 0
-                            if (api.collections.count > 0) {
-                                currentCollection = api.collections.get(0).games
-                                if (currentCollection.count > 0) {
-                                    currentGame = currentCollection.get(0)
-                                }
-                            }
-                            gameListView.currentIndex = 0
-                            focusManager.enterCollectionsView()
-                        } else {
-                            Utils.updateFilter(currentIndex, root)
-                        }
-                    }
-                }*/
-
                 onCurrentIndexChanged: {
                     if (showingCollections && currentItem) {
                         selectedCollectionIndex = currentIndex
                         var collection = api.collections.get(currentIndex)
                         currentCollection = collection.games
-                        gameListView.currentIndex = 0
+                        if (gameListView) {
+                            gameListView.currentIndex = 0
+                        }
                         if (currentCollection.count > 0) {
                             currentGame = currentCollection.get(0)
                         }
@@ -1208,13 +914,14 @@ FocusScope {
                                     currentGame = currentCollection.get(0)
                                 }
                             }
-                            gameListView.currentIndex = 0
+                            if (gameListView) {
+                                gameListView.currentIndex = 0
+                            }
                             focusManager.enterCollectionsView()
                         } else {
                             Utils.updateFilter(currentIndex, root)
                             var filterNames = ["All", "Favorites", "Most Played", "Recently Played"];
                             if (currentIndex < filterNames.length) {
-                                /*Utils.debugCollection(currentCollection, filterNames[currentIndex]);*/
                             }
                         }
                     }
@@ -1277,11 +984,25 @@ FocusScope {
                     }
                     else if (event.key === Qt.Key_Up) {
                         event.accepted = true
-                        focusManager.handleUp()
+                        if (!isGridViewMode) {
+                            focusManager.handleUp()
+                        }
                     }
                     else if (event.key === Qt.Key_Down) {
                         event.accepted = true
-                        focusManager.handleDown()
+                        console.log("FilterListView: Down pressed, isGridViewMode:", root.isGridViewMode)
+
+                        if (root.isGridViewMode) {
+                            console.log("Passing focus to gameList")
+                            if (focusManager) {
+                                focusManager.setFocus("gameList")
+                            }
+                        } else {
+                            console.log("Normal down behavior")
+                            if (focusManager) {
+                                focusManager.handleDown()
+                            }
+                        }
                     }
                     else if (api.keys.isFilters(event)) {
                         event.accepted = true
@@ -1294,13 +1015,17 @@ FocusScope {
                                     currentGame = currentCollection.get(0)
                                 }
                             }
-                            gameListView.currentIndex = 0
+                            if (gameListView) {
+                                gameListView.currentIndex = 0
+                            }
                             focusManager.enterCollectionsView()
                         } else {
                             showingCollections = false
                             unifiedFilterListView.currentIndex = 0
                             currentCollection = api.allGames
-                            gameListView.currentIndex = 0
+                            if (gameListView) {
+                                gameListView.currentIndex = 0
+                            }
                             if (currentCollection.count > 0) {
                                 currentGame = currentCollection.get(0)
                             }
@@ -1313,14 +1038,15 @@ FocusScope {
                             showingCollections = false
                             unifiedFilterListView.currentIndex = 0
                             currentCollection = api.allGames
-                            gameListView.currentIndex = 0
+                            if (gameListView) {
+                                gameListView.currentIndex = 0
+                            }
                             if (currentCollection.count > 0) {
                                 currentGame = currentCollection.get(0)
                             }
                             focusManager.exitCollectionsView()
                         } else {
-                            if (!focusManager.handleBack()) {
-                            }
+                            event.accepted = false
                         }
                     }
                 }
@@ -1337,6 +1063,7 @@ FocusScope {
             anchors.bottom: parent.bottom
             anchors.bottomMargin: vpx(12)
             spacing: vpx(50)
+            z: 7
 
             Row {
                 spacing: vpx(10)
@@ -1562,6 +1289,7 @@ FocusScope {
                 opacity: parent.opacity
             }
         }
+
         Timer {
             id: letterTimer
             interval: 1000
