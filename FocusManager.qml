@@ -83,6 +83,7 @@ QtObject {
     function handleDown() {
         if (currentView === "home") {
             if (currentFocus === "gameList") {
+                // En modo GridView, no permitir pasar al filtro con Down
                 if (homeView.isGridViewMode) {
                     return false
                 }
@@ -109,6 +110,7 @@ QtObject {
     function exitCollectionsView() {
     }
 
+    // Función para actualizar la referencia del gameListView cuando cambie
     onGameListViewChanged: {
         if (gameListView && currentFocus === "gameList") {
             gameListView.focus = true

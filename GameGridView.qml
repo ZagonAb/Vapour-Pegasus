@@ -17,8 +17,8 @@ GridView {
     signal filterValidationRequested()
 
     anchors.fill: parent
-    anchors.topMargin: vpx(10
-    anchors.bottomMargin: vpx(20
+    anchors.topMargin: vpx(10)
+    anchors.bottomMargin: vpx(20)
     anchors.leftMargin: vpx(40)
     anchors.rightMargin: vpx(40)
 
@@ -147,7 +147,7 @@ GridView {
         Item {
             id: contentContainer
             anchors.fill: parent
-            anchors.margins: vpx(8
+            anchors.margins: vpx(8)
 
             Rectangle {
                 id: cardBackground
