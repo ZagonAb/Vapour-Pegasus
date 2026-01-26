@@ -1100,7 +1100,7 @@ FocusScope {
                     anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
-                    text: "switch view"
+                    text: "Switch view"
                     font.pixelSize: vpx(16)
                     font.family: global.fonts.sans
                     color: "#CCCCCC"
