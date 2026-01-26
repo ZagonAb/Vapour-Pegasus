@@ -4,11 +4,11 @@
 
 - Inspired by the visual and navigation experience offered by the ![Vapour](https://github.com/davidkgriggs/Vapour/tree/main) theme for playnite.
 
-![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/c162abc8802ff50d29372cf55c7a9812189e1ecb/.meta/screenshots/screen0.png)
+![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/edc93b34e8b096aeec38f2d7695b5d77f43b1bc7/.meta/screenshots/screen0.png)
 
-![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/c162abc8802ff50d29372cf55c7a9812189e1ecb/.meta/screenshots/screen1.png)
+![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/edc93b34e8b096aeec38f2d7695b5d77f43b1bc7/.meta/screenshots/screen1.png)
 
-![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/c162abc8802ff50d29372cf55c7a9812189e1ecb/.meta/screenshots/screen2.png)
+![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/edc93b34e8b096aeec38f2d7695b5d77f43b1bc7/.meta/screenshots/screen2.png)
 
 ----
 
