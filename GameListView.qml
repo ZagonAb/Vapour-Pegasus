@@ -457,19 +457,51 @@ ListView {
     }
 
     Keys.onPressed: {
-        console.log("GameListView Key pressed:", event.key, "Focus:", focus)
-
         if (!event.isAutoRepeat && api.keys.isAccept(event)) {
-            event.accepted = true
-            Utils.launchGame(currentGameRef, api)
-        }
-        else if (api.keys.isDetails(event)) {
             event.accepted = true
             if (detailsViewRef) {
                 detailsViewRef.show()
             }
             if (focusManagerRef) {
                 focusManagerRef.switchView("details")
+            }
+        }
+        else if (api.keys.isDetails(event)) {
+            event.accepted = true
+
+            if (themeRoot) {
+                var currentViewMode = api.memory.has('viewMode') ? api.memory.get('viewMode') : 'list'
+                var newViewMode = currentViewMode === 'grid' ? 'list' : 'grid'
+
+                api.memory.set('viewMode', newViewMode)
+
+                if (themeRoot.viewToggleButton) {
+                    themeRoot.viewToggleButton.isGridView = (newViewMode === 'grid')
+                }
+
+                if (themeRoot.gameViewLoader) {
+                    themeRoot.gameViewLoader.active = false
+
+                    Qt.callLater(function() {
+                        themeRoot.gameViewLoader.sourceComponent = undefined
+                        themeRoot.gameViewLoader.sourceComponent =
+                        (newViewMode === 'grid') ? themeRoot.gridViewComponent : themeRoot.listViewComponent
+                        themeRoot.gameViewLoader.active = true
+
+                        Qt.callLater(function() {
+                            if (focusManagerRef) {
+                                if (newViewMode === 'grid') {
+                                    focusManagerRef.gameGridView = themeRoot.gameViewLoader.item
+                                    focusManagerRef.gameListView = null
+                                } else {
+                                    focusManagerRef.gameListView = themeRoot.gameViewLoader.item
+                                    focusManagerRef.gameGridView = null
+                                }
+                                focusManagerRef.setFocus("gameList")
+                            }
+                        })
+                    })
+                }
             }
         }
         else if (api.keys.isNextPage(event)) {
@@ -530,14 +562,12 @@ ListView {
         }
         else if (event.key === Qt.Key_Up) {
             event.accepted = true
-            console.log("GameListView: Up key pressed, calling handleUp")
             if (focusManagerRef) {
                 focusManagerRef.handleUp()
             }
         }
         else if (event.key === Qt.Key_Down) {
             event.accepted = true
-            console.log("GameListView: Down key pressed, calling handleDown")
             if (focusManagerRef) {
                 focusManagerRef.handleDown()
             }

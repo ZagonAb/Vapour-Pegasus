@@ -886,6 +886,16 @@ FocusScope {
                             font.bold: isCurrent && hasFocus
                             anchors.centerIn: parent
 
+                            layer.enabled: !(isCurrent && hasFocus)
+                            layer.effect: DropShadow {
+                                horizontalOffset: 0
+                                verticalOffset: 0
+                                radius: vpx(15)
+                                samples: 25
+                                color: "#99000000"
+                                spread: 0.3
+                            }
+
                             Behavior on color {
                                 ColorAnimation { duration: 150 }
                             }
@@ -1074,7 +1084,7 @@ FocusScope {
                     anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
-                    text: "launch game"
+                    text: "View game"
                     font.pixelSize: vpx(16)
                     font.family: global.fonts.sans
                     color: "#CCCCCC"
@@ -1090,7 +1100,7 @@ FocusScope {
                     anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
-                    text: showingCollections ? "Details" : "Details"
+                    text: "switch view"
                     font.pixelSize: vpx(16)
                     font.family: global.fonts.sans
                     color: "#CCCCCC"
