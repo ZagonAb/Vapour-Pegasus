@@ -624,6 +624,14 @@ GridView {
             }
         }
         else if (api.keys.isCancel(event)) {
+            if (themeRoot && !themeRoot.showingCollections) {
+                event.accepted = true
+                if (focusManagerRef) {
+                    focusManagerRef.setFocus("filterSelector")
+                }
+                return
+            }
+
             if (themeRoot && themeRoot.showingCollections) {
                 event.accepted = true
                 if (focusManagerRef) {
