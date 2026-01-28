@@ -6,7 +6,7 @@
 
 ![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/edc93b34e8b096aeec38f2d7695b5d77f43b1bc7/.meta/screenshots/screen0.png)
 
-![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/edc93b34e8b096aeec38f2d7695b5d77f43b1bc7/.meta/screenshots/screen1.png)
+![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/2fb4e735e83747bfd562ae88547bdb7281b8b765/.meta/screenshots/screen0.png)
 
 ![screen](https://github.com/ZagonAb/Vapour-Pegasus/blob/edc93b34e8b096aeec38f2d7695b5d77f43b1bc7/.meta/screenshots/screen2.png)
 
