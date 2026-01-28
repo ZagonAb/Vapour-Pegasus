@@ -673,69 +673,147 @@ Item {
                 }
             }
 
-            Row {
+            Item {
                 id: detailsInfoContainer
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: vpx(50)
-                width: parent.width * 0.45
+                anchors {
+                    left: scrollContainer.right
+                    leftMargin: vpx(80)
+                    top: scrollContainer.top
+                    bottom: scrollContainer.bottom
+                    right: parent.right
+                }
 
                 Column {
                     id: detailsInfoLeft
-                    spacing: vpx(18)
-                    width: parent.width * 0.5 - vpx(20)
+                    anchors {
+                        left: parent.left
+                        top: parent.top
+                    }
+                    width: vpx(180)
+                    spacing: vpx(20)
 
                     InfoRow {
+                        width: parent.width
                         label: "Time Played"
-                        value: Utils.formatPlayTime(currentGame ? currentGame.playTime : 0)
+                        value: currentGame ? Utils.formatPlayTime(currentGame.playTime) : "Not Played"
                     }
 
                     InfoRow {
-                        label: "Last Played"
-                        value: currentGame && currentGame.lastPlayed.getTime() > 0 ?
-                        Qt.formatDate(currentGame.lastPlayed, "dd/MM/yyyy") : "Never"
+                        width: parent.width
+                        label: "Play Count"
+                        value: currentGame && currentGame.playCount > 0 ? currentGame.playCount.toString() : "0"
                     }
 
-                    InfoRow {
-                        label: "Platforms"
-                        value: currentGame && Utils.getCollectionName(currentGame) ?
-                        Utils.getCollectionName(currentGame) : ""
-                    }
+                    Item {
+                        width: parent.width
+                        height: childrenRect.height
 
-                    InfoRow {
-                        label: "Release Date"
-                        value: currentGame && currentGame.release.getTime() > 0 ?
-                        Qt.formatDate(currentGame.release, "dd/MM/yyyy") : ""
+                        Column {
+                            width: parent.width
+                            spacing: vpx(8)
+
+                            Text {
+                                text: currentGame ? Math.round(currentGame.rating * 100) + "%" : "0%"
+                                font.pixelSize: vpx(14)
+                                font.family: global.fonts.sans
+                                color: "#9099a1"
+                            }
+
+                            Rectangle {
+                                width: vpx(150)
+                                height: vpx(4)
+                                color: "#2a2e33"
+
+                                Rectangle {
+                                    width: parent.width * (currentGame ? currentGame.rating : 0)
+                                    height: parent.height
+                                    color: "#FFFFFF"
+                                }
+                            }
+                        }
                     }
                 }
 
-                Column {
-                    id: detailsInfoRight
-                    spacing: vpx(18)
-                    width: parent.width * 0.5 - vpx(20)
+                Row {
+                    id: rightColumnsContainer
+                    anchors {
+                        left: detailsInfoLeft.right
+                        leftMargin: vpx(40)
+                        top: parent.top
+                        bottom: parent.bottom
+                        right: parent.right
+                    }
+                    spacing: 0
 
-                    InfoRow {
-                        label: "Rating"
-                        value: currentGame && currentGame.rating > 0 ?
-                        Math.round(currentGame.rating * 100).toString() + "%" : ""
+                    Column {
+                        id: detailsInfoCenter
+                        width: vpx(100)
+                        spacing: vpx(20)
+
+                        InfoRow {
+                            width: parent.width
+                            label: "Last Played"
+                            value: currentGame ? Utils.formatDate(currentGame.lastPlayed) : "Never"
+                        }
+
+                        InfoRow {
+                            width: parent.width
+                            label: "Release Date"
+                            value: currentGame ? Utils.formatDate(currentGame.release) : "Unknown"
+                        }
                     }
 
-                    InfoRow {
-                        label: "Genres"
-                        value: currentGame ? currentGame.genre : ""
+                    Rectangle {
+                        id: dividerLine
+                        width: vpx(1)
+                        height: parent.height
+                        color: "#2a2e33"
                     }
 
-                    InfoRow {
-                        label: "Developers"
-                        value: currentGame ? currentGame.developer : ""
+                    Item {
+                        width: vpx(20)
+                        height: parent.height
                     }
 
-                    InfoRow {
-                        label: "Publishers"
-                        value: currentGame ? currentGame.publisher : ""
+                    Column {
+                        id: detailsInfoRight
+                        width: vpx(180)
+                        spacing: vpx(20)
+
+                        InfoRow {
+                            width: parent.width
+                            label: "Platforms"
+                            value: currentGame ? Utils.getCollectionName(currentGame) : "Unknown"
+                            showDivider: false
+                        }
+
+                        InfoRow {
+                            width: parent.width
+                            label: "Genres"
+                            value: currentGame ? (currentGame.genre || "Unknown") : "Unknown"
+                            visible: currentGame && currentGame.genre
+                            showDivider: false
+                        }
+
+                        InfoRow {
+                            width: parent.width
+                            label: "Developers"
+                            value: currentGame ? (currentGame.developer || "Unknown") : "Unknown"
+                            visible: currentGame && currentGame.developer
+                            showDivider: false
+                        }
+
+                        InfoRow {
+                            width: parent.width
+                            label: "Publishers"
+                            value: currentGame ? (currentGame.publisher || "Unknown") : "Unknown"
+                            visible: currentGame && currentGame.publisher
+                            showDivider: false
+                        }
                     }
                 }
             }
+
         }
     }
 
