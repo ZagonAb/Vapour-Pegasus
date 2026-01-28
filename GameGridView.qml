@@ -12,6 +12,7 @@ GridView {
     property var detailsViewRef: null
     property string currentView: "home"
     property var themeRoot: null
+
     signal gameChanged(var game)
     signal letterIndexRequested()
     signal filterValidationRequested()
@@ -501,6 +502,7 @@ GridView {
     Keys.onPressed: {
         if (!event.isAutoRepeat && api.keys.isAccept(event)) {
             event.accepted = true
+            soundManager.playNavigation()
             if (detailsViewRef) {
                 detailsViewRef.show()
             }
@@ -510,6 +512,7 @@ GridView {
         }
         else if (api.keys.isDetails(event)) {
             event.accepted = true
+            soundManager.playNavigation()
 
             if (themeRoot) {
                 var currentViewMode = api.memory.has('viewMode') ? api.memory.get('viewMode') : 'list'
@@ -548,18 +551,21 @@ GridView {
         }
         else if (api.keys.isNextPage(event)) {
             event.accepted = true
+            soundManager.playNavigation()
             if (themeRoot && themeRoot.jumpToNextLetter) {
                 themeRoot.jumpToNextLetter()
             }
         }
         else if (api.keys.isPrevPage(event)) {
             event.accepted = true
+            soundManager.playNavigation()
             if (themeRoot && themeRoot.jumpToPrevLetter) {
                 themeRoot.jumpToPrevLetter()
             }
         }
         else if (api.keys.isFilters(event)) {
             event.accepted = true
+            soundManager.playNavigation()
             if (themeRoot) {
                 if (!themeRoot.showingCollections) {
                     themeRoot.showingCollections = true
@@ -604,6 +610,7 @@ GridView {
         }
         else if (event.key === Qt.Key_Up) {
             event.accepted = true
+            soundManager.playNavigation()
             var cols = Math.floor(width / cellWidth)
             if (currentIndex < cols) {
                 if (focusManagerRef) {
@@ -618,6 +625,7 @@ GridView {
         }
         else if (event.key === Qt.Key_Down) {
             event.accepted = true
+            soundManager.playNavigation()
             var cols = Math.floor(width / cellWidth)
             if (currentIndex + cols < count) {
                 currentIndex += cols
@@ -626,6 +634,7 @@ GridView {
         else if (api.keys.isCancel(event)) {
             if (themeRoot && !themeRoot.showingCollections) {
                 event.accepted = true
+                soundManager.playNavigation()
                 if (focusManagerRef) {
                     focusManagerRef.setFocus("filterSelector")
                 }
@@ -634,6 +643,7 @@ GridView {
 
             if (themeRoot && themeRoot.showingCollections) {
                 event.accepted = true
+                soundManager.playNavigation()
                 if (focusManagerRef) {
                     focusManagerRef.setFocus("filterSelector")
                 }
@@ -645,10 +655,12 @@ GridView {
         }
         else if (event.key === Qt.Key_Left) {
             event.accepted = true
+            soundManager.playNavigation()
             moveCurrentIndexLeft()
         }
         else if (event.key === Qt.Key_Right) {
             event.accepted = true
+            soundManager.playNavigation()
             moveCurrentIndexRight()
         }
         else if (event.key === Qt.Key_PageUp) {

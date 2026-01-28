@@ -459,6 +459,7 @@ ListView {
     Keys.onPressed: {
         if (!event.isAutoRepeat && api.keys.isAccept(event)) {
             event.accepted = true
+            soundManager.playNavigation()
             if (detailsViewRef) {
                 detailsViewRef.show()
             }
@@ -468,6 +469,7 @@ ListView {
         }
         else if (api.keys.isDetails(event)) {
             event.accepted = true
+            soundManager.playNavigation()
 
             if (themeRoot) {
                 var currentViewMode = api.memory.has('viewMode') ? api.memory.get('viewMode') : 'list'
@@ -506,18 +508,21 @@ ListView {
         }
         else if (api.keys.isNextPage(event)) {
             event.accepted = true
+            soundManager.playNavigation()
             if (themeRoot && themeRoot.jumpToNextLetter) {
                 themeRoot.jumpToNextLetter()
             }
         }
         else if (api.keys.isPrevPage(event)) {
             event.accepted = true
+            soundManager.playNavigation()
             if (themeRoot && themeRoot.jumpToPrevLetter) {
                 themeRoot.jumpToPrevLetter()
             }
         }
         else if (api.keys.isFilters(event)) {
             event.accepted = true
+            soundManager.playNavigation()
             if (themeRoot) {
                 if (!themeRoot.showingCollections) {
                     themeRoot.showingCollections = true
@@ -562,12 +567,14 @@ ListView {
         }
         else if (event.key === Qt.Key_Up) {
             event.accepted = true
+            soundManager.playNavigation()
             if (focusManagerRef) {
                 focusManagerRef.handleUp()
             }
         }
         else if (event.key === Qt.Key_Down) {
             event.accepted = true
+            soundManager.playNavigation()
             if (focusManagerRef) {
                 focusManagerRef.handleDown()
             }
@@ -575,6 +582,7 @@ ListView {
         else if (api.keys.isCancel(event)) {
             if (themeRoot && themeRoot.showingCollections) {
                 event.accepted = true
+                soundManager.playNavigation()
                 if (focusManagerRef) {
                     focusManagerRef.setFocus("filterSelector")
                 }

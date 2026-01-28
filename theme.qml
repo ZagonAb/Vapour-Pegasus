@@ -25,6 +25,10 @@ FocusScope {
     property var recentlyPlayedFilter: recentlyPlayedFilterModel
     readonly property bool isGridViewMode: viewToggleButton.isGridView
 
+    SoundEffects {
+        id: soundManager
+    }
+
     FavoritesFilter {
         id: favoritesFilterModel
     }
@@ -940,6 +944,7 @@ FocusScope {
                 Keys.onPressed: {
                     if (event.key === Qt.Key_Left) {
                         event.accepted = true
+                        soundManager.playNavigation()
                         if (!showingCollections) {
                             var newIndex = Utils.getNextValidFilterIndex(
                                 unifiedFilterListView.currentIndex,
@@ -956,6 +961,7 @@ FocusScope {
                         }
                     }
                     else if (event.key === Qt.Key_Right) {
+                        soundManager.playNavigation()
                         event.accepted = true
                         if (!showingCollections) {
                             var newIndex = Utils.getNextValidFilterIndex(
@@ -973,6 +979,7 @@ FocusScope {
                         }
                     }
                     else if (api.keys.isNextPage(event)) {
+                        soundManager.playNavigation()
                         event.accepted = true
                         if (showingCollections) {
                             if (unifiedFilterListView.currentIndex < unifiedFilterListView.count - 1) {
@@ -984,6 +991,7 @@ FocusScope {
                     }
                     else if (api.keys.isPrevPage(event)) {
                         event.accepted = true
+                        soundManager.playNavigation()
                         if (showingCollections) {
                             if (unifiedFilterListView.currentIndex > 0) {
                                 unifiedFilterListView.currentIndex--
@@ -994,12 +1002,14 @@ FocusScope {
                     }
                     else if (event.key === Qt.Key_Up) {
                         event.accepted = true
+                        soundManager.playNavigation()
                         if (!isGridViewMode) {
                             focusManager.handleUp()
                         }
                     }
                     else if (event.key === Qt.Key_Down) {
                         event.accepted = true
+                        soundManager.playNavigation()
                         console.log("FilterListView: Down pressed, isGridViewMode:", root.isGridViewMode)
 
                         if (root.isGridViewMode) {
@@ -1016,6 +1026,7 @@ FocusScope {
                     }
                     else if (api.keys.isFilters(event)) {
                         event.accepted = true
+                        soundManager.playNavigation()
                         if (!showingCollections) {
                             showingCollections = true
                             unifiedFilterListView.currentIndex = 0
@@ -1044,6 +1055,7 @@ FocusScope {
                     }
                     else if (api.keys.isCancel(event)) {
                         event.accepted = true
+                        soundManager.playNavigation()
                         if (showingCollections) {
                             showingCollections = false
                             unifiedFilterListView.currentIndex = 0
@@ -1057,6 +1069,7 @@ FocusScope {
                             focusManager.exitCollectionsView()
                         } else {
                             event.accepted = false
+                            soundManager.playNavigation()
                         }
                     }
                 }

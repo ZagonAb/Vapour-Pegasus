@@ -1083,6 +1083,7 @@ Item {
         if (api.keys.isCancel(event) || event.key === Qt.Key_Escape) {
             if (allowEscape) {
                 event.accepted = true
+                soundManager.playNavigation()
                 hide()
             } else {
                 event.accepted = true
@@ -1090,6 +1091,7 @@ Item {
         }
         else if (api.keys.isAccept(event)) {
             event.accepted = true
+            soundManager.playNavigation()
 
             switch(currentButtonIndex) {
                 case 0:
@@ -1160,6 +1162,7 @@ Item {
         }
         else if (event.key === Qt.Key_Left) {
             event.accepted = true
+            soundManager.playNavigation()
 
             if (!videoHasStarted) {
                 if (currentButtonIndex === 0) {
@@ -1192,6 +1195,7 @@ Item {
         }
         else if (event.key === Qt.Key_Right) {
             event.accepted = true
+            soundManager.playNavigation()
 
             if (!videoHasStarted) {
                 if (currentButtonIndex === 0) {
