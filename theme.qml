@@ -133,10 +133,44 @@ FocusScope {
         anchors.fill: parent
         color: "transparent"
 
-        Image {
-            id: backgroundImage
+        Item {
+            id: backgroundContainer
             anchors.fill: parent
-            source: {
+
+            Image {
+                id: backgroundImage1
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                opacity: 0
+                visible: opacity > 0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 200
+                        easing.type: Easing.InOutQuad
+                    }
+                }
+            }
+
+            Image {
+                id: backgroundImage2
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                opacity: 0
+                visible: opacity > 0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 300
+                        easing.type: Easing.InOutQuad
+                    }
+                }
+            }
+
+            property bool useImage1: true
+            property string targetSource: {
                 if (currentGame && currentGame.assets) {
                     if (currentGame.assets.background && currentGame.assets.background !== "") {
                         return currentGame.assets.background
@@ -147,22 +181,59 @@ FocusScope {
                 }
                 return ""
             }
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: true
-            opacity: (currentView === "details" && videoOverlayComponent.isFullscreen) ? 0 : 1
-            visible: opacity > 0
 
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 250
-                    easing.type: Easing.InOutQuad
+            onTargetSourceChanged: {
+                if (targetSource === "") return
+
+                    var targetImage = useImage1 ? backgroundImage1 : backgroundImage2
+                    var oldImage = useImage1 ? backgroundImage2 : backgroundImage1
+
+                    targetImage.source = targetSource
+
+                    if (targetImage.status === Image.Ready) {
+                        if ((currentView === "details" && videoOverlayComponent.isFullscreen)) {
+                            targetImage.opacity = 0
+                        } else {
+                            targetImage.opacity = 1
+                        }
+                        oldImage.opacity = 0
+                    } else {
+                        targetImage.onStatusChanged.connect(function() {
+                            if (targetImage.status === Image.Ready) {
+                                if ((currentView === "details" && videoOverlayComponent.isFullscreen)) {
+                                    targetImage.opacity = 0
+                                } else {
+                                    targetImage.opacity = 1
+                                }
+                                oldImage.opacity = 0
+                            }
+                        })
+                    }
+
+                    useImage1 = !useImage1
+            }
+
+            Connections {
+                target: root
+                function onCurrentViewChanged() {
+                    var activeImage = backgroundImage1.opacity > 0 ? backgroundImage1 : backgroundImage2
+                    if (currentView === "details" && videoOverlayComponent.isFullscreen) {
+                        activeImage.opacity = 0
+                    } else if (activeImage.source !== "") {
+                        activeImage.opacity = 1
+                    }
                 }
             }
 
-            onStatusChanged: {
-                if (status === Image.Ready && !(currentView === "details" && videoOverlayComponent.isFullscreen)) {
-                } else if (status === Image.Error) {
-                    opacity = 0
+            Connections {
+                target: videoOverlayComponent
+                function onIsFullscreenChanged() {
+                    var activeImage = backgroundImage1.opacity > 0 ? backgroundImage1 : backgroundImage2
+                    if (currentView === "details" && videoOverlayComponent.isFullscreen) {
+                        activeImage.opacity = 0
+                    } else if (activeImage.source !== "") {
+                        activeImage.opacity = 1
+                    }
                 }
             }
         }
@@ -687,7 +758,7 @@ FocusScope {
             (parent.width - width) / 2 :
             (parent.width - width) / 2 + vpx(60)
 
-            y: isGridViewMode ? (topBar.height - vpx(20)) : (parent.height - keyHints.height - vpx(62))
+            y: isGridViewMode ? (topBar.height - vpx(20)) : (parent.height - keyHints.height - vpx(82))
 
             ListView {
                 id: unifiedFilterListView
@@ -1084,7 +1155,7 @@ FocusScope {
             id: keyHints
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: vpx(12)
+            anchors.bottomMargin: vpx(20)
             spacing: vpx(50)
             z: 7
 
@@ -1218,10 +1289,19 @@ FocusScope {
             }
         }
 
+        ShaderEffectSource {
+            id: blurSource
+            anchors.fill: parent
+            sourceItem: root
+            hideSource: false
+            live: true
+            recursive: false
+        }
+
         FastBlur {
             id: blurEffect
             anchors.fill: parent
-            source: root
+            source: blurSource
             radius: letterOverlay.opacity > 0 ? 64 : 0
             cached: false
 

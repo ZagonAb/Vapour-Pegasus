@@ -467,6 +467,20 @@ ListView {
                 focusManagerRef.switchView("details")
             }
         }
+        else if (event.key === Qt.Key_Left) {
+            event.accepted = true
+            soundManager.playNavigation()
+            if (currentIndex > 0) {
+                currentIndex--
+            }
+        }
+        else if (event.key === Qt.Key_Right) {
+            event.accepted = true
+            soundManager.playNavigation()
+            if (currentIndex < count - 1) {
+                currentIndex++
+            }
+        }
         else if (api.keys.isDetails(event)) {
             event.accepted = true
             soundManager.playNavigation()
@@ -587,8 +601,10 @@ ListView {
                     focusManagerRef.setFocus("filterSelector")
                 }
             } else {
+                soundManager.playNavigation()
                 if (focusManagerRef && focusManagerRef.handleBack()) {
                     event.accepted = true
+
                 }
             }
         }
