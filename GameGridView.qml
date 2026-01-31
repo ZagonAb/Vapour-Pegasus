@@ -48,8 +48,6 @@ GridView {
     }
 
     onFocusChanged: {
-        console.log("GameGridView focus changed to:", focus)
-
         if (currentItem) {
             currentItem.hasFocus = focus
         }
@@ -118,7 +116,6 @@ GridView {
         }
 
         onHasFocusChanged: {
-            console.log("Delegate hasFocus changed:", index, "to:", hasFocus, "isSelected:", isSelected)
 
             if (isSelected && hasFocus) {
                 shouldShowReflection = true
@@ -370,7 +367,6 @@ GridView {
                 }
 
                 onOpacityChanged: {
-                    console.log("GradientBorder opacity changed:", opacity, "isSelected:", isSelected, "hasFocus:", hasFocus)
 
                     if (opacity === 1 && isSelected && hasFocus) {
                         progress = 0.0

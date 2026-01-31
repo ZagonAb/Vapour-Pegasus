@@ -24,6 +24,7 @@ FocusScope {
     property var mostPlayedFilter: mostPlayedFilterModel
     property var recentlyPlayedFilter: recentlyPlayedFilterModel
     readonly property bool isGridViewMode: viewToggleButton.isGridView
+    property bool videoHasBeenStarted: false
 
     SoundEffects {
         id: soundManager
@@ -128,6 +129,24 @@ FocusScope {
         }
     }
 
+    function checkVideoState() {
+        if (!videoOverlayComponent.isPlaying && videoOverlayComponent.opacity === 0) {
+            videoHasBeenStarted = false
+        }
+    }
+
+    function updateBackgroundOpacity() {
+        var activeImage = !backgroundContainer.useImage1 ? backgroundImage1 : backgroundImage2
+        if (currentView === "details" && videoOverlayComponent.isFullscreen) {
+            backgroundImage1.opacity = 0
+            backgroundImage2.opacity = 0
+        } else if (activeImage.source !== "") {
+            activeImage.opacity = 1
+            var inactiveImage = !backgroundContainer.useImage1 ? backgroundImage2 : backgroundImage1
+            inactiveImage.opacity = 0
+        }
+    }
+
     Rectangle {
         id: allOverlay
         anchors.fill: parent
@@ -216,24 +235,24 @@ FocusScope {
             Connections {
                 target: root
                 function onCurrentViewChanged() {
-                    var activeImage = backgroundImage1.opacity > 0 ? backgroundImage1 : backgroundImage2
-                    if (currentView === "details" && videoOverlayComponent.isFullscreen) {
-                        activeImage.opacity = 0
-                    } else if (activeImage.source !== "") {
-                        activeImage.opacity = 1
+                    if (currentView !== "details") {
+                        videoHasBeenStarted = false
                     }
+                    updateBackgroundOpacity()
                 }
             }
 
             Connections {
                 target: videoOverlayComponent
                 function onIsFullscreenChanged() {
-                    var activeImage = backgroundImage1.opacity > 0 ? backgroundImage1 : backgroundImage2
-                    if (currentView === "details" && videoOverlayComponent.isFullscreen) {
-                        activeImage.opacity = 0
-                    } else if (activeImage.source !== "") {
-                        activeImage.opacity = 1
-                    }
+                    updateBackgroundOpacity()
+                }
+            }
+
+            Connections {
+                target: videoOverlayComponent
+                function onVideoFinished() {
+                    videoHasBeenStarted = false
                 }
             }
         }
@@ -241,26 +260,122 @@ FocusScope {
         VideoOverlay {
             id: videoOverlayComponent
             currentGame: root.currentGame
-            z: 1
+            z: 3
         }
 
-        Rectangle {
-            anchors.fill: parent
+        Connections {
+            target: videoOverlayComponent
+            function onIsPlayingChanged() {
+                if (videoOverlayComponent.isPlaying) {
+                    videoHasBeenStarted = true
+                } else {
+                    Qt.callLater(checkVideoState)
+                }
+            }
+        }
+
+        Connections {
+            target: videoOverlayComponent
+            function onOpacityChanged() {
+                if (videoOverlayComponent.opacity === 0) {
+                    videoHasBeenStarted = false
+                }
+            }
+        }
+
+        Item {
+            id: blurOverlayContainer
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: parent.height * 0.5
             z: 2
-            opacity: (currentView === "details" && videoOverlayComponent.isFullscreen) ? 0 : 1
+            opacity: videoOverlayComponent.isFullscreen ? 0 : 1
             visible: opacity > 0
 
             Behavior on opacity {
                 NumberAnimation {
-                    duration: 250
+                    duration: 300
                     easing.type: Easing.InOutQuad
                 }
             }
 
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "#00000000" }
-                GradientStop { position: 0.8; color: "#FF000000" }
-                GradientStop { position: 1.0; color: "black" }
+            ShaderEffectSource {
+                id: backgroundSource
+                anchors.fill: parent
+                sourceItem: backgroundContainer
+                sourceRect: Qt.rect(0, parent.parent.height * 0.5, parent.parent.width, parent.parent.height * 0.5)
+                hideSource: false
+                live: blurOverlayContainer.visible
+                visible: false
+            }
+
+            FastBlur {
+                id: backgroundBlur
+                anchors.fill: parent
+                source: backgroundSource
+                radius: blurOverlayContainer.visible ? 32 : 0
+                cached: false
+                opacity: 1
+                visible: true
+
+                Behavior on radius {
+                    NumberAnimation {
+                        duration: 250
+                        easing.type: Easing.InOutQuad
+                    }
+                }
+
+                layer.enabled: true
+                layer.effect: OpacityMask {
+                    maskSource: Rectangle {
+                        width: backgroundBlur.width
+                        height: backgroundBlur.height
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: "#00000000" }
+                            GradientStop { position: 0.2; color: "#FF000000" }
+                            GradientStop { position: 1.0; color: "#FF000000" }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: "#00000000" }
+                    GradientStop { position: 0.8; color: "#FF000000" }
+                    GradientStop { position: 1.0; color: "black" }
+                }
+            }
+        }
+
+        Loader {
+            id: gradientOverlayLoader
+            anchors.fill: parent
+            z: 3
+            active: currentView === "details" && !videoOverlayComponent.isFullscreen
+
+            sourceComponent: Rectangle {
+                anchors.fill: parent
+                opacity: 0
+
+                Component.onCompleted: {
+                    opacity = 1
+                }
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 300
+                        easing.type: Easing.InOutQuad
+                    }
+                }
+
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: "#00000000" }
+                    GradientStop { position: 0.8; color: "#FF000000" }
+                    GradientStop { position: 1.0; color: "black" }
+                }
             }
         }
     }
@@ -1081,15 +1196,13 @@ FocusScope {
                     else if (event.key === Qt.Key_Down) {
                         event.accepted = true
                         soundManager.playNavigation()
-                        console.log("FilterListView: Down pressed, isGridViewMode:", root.isGridViewMode)
 
                         if (root.isGridViewMode) {
-                            console.log("Passing focus to gameList")
                             if (focusManager) {
                                 focusManager.setFocus("gameList")
                             }
                         } else {
-                            console.log("Normal down behavior")
+
                             if (focusManager) {
                                 focusManager.handleDown()
                             }

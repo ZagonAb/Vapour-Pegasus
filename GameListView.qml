@@ -59,7 +59,6 @@ ListView {
 
     onFocusChanged: {
         if (focus) {
-            console.log("GameListView received focus")
         }
     }
 
